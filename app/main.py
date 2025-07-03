@@ -11,6 +11,7 @@ from datetime import datetime
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.api.endpoints import router as api_router
+from app.api.advanced_pms import router as advanced_pms_router
 
 # Setup logging
 setup_logging()
@@ -36,6 +37,7 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(advanced_pms_router)
 
 @app.get("/")
 async def root():

@@ -79,8 +79,18 @@ Step 4: Update the API:The endpoint will return XML (with Content-Type: applicat
 
 Next steps:
  support rate messages, and proceed to posting this XML to internal API.
- 
+transalated rate and avail are saved in samples "cb_translated_rate.xml"
 
+
+API now:
+Translates and validates both availability and rate messages.
+Generates the correct RGBridge XML.
+Validates the XML against the appropriate XSD.
+Posts the validated XML to your internal API endpoint (as configured).
+Returns the internal API’s response (status and body) to the caller.
+
+USER INTERFACE
+npx create-react-app ui --template typescript && cd ui && npm install @mui/material @emotion/react @emotion/styled @mui/icons-material axios @monaco-editor/react
 
 
 

@@ -13,8 +13,9 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.plugins import plugin_registry
 from app.plugins.base import MessageType
-from app.core.xml_builder import build_avail_notif_xml
+from app.core.xml_builder import build_avail_notif_xml, build_rate_amount_notif_xml
 from app.core.xsd_validator import validate_xml_with_xsd
+from app.core.internal_api_client import post_xml_to_internal_api
 
 # Create router
 router = APIRouter()
@@ -114,7 +115,7 @@ async def pms_post_endpoint(
     authenticated: bool = Depends(verify_api_key)
 ) -> Response:
     """
-    Receive PMS message, validate, translate to RGBridge XML, and return XML
+    Receive PMS message, validate, translate to RGBridge XML, validate, and post to internal API
     """
     logger.info(f"Received POST message from PMS: {pms_code}")
     logger.debug(f"Request method: {request.method}")
@@ -150,12 +151,16 @@ async def pms_post_endpoint(
     try:
         if msg_type == MessageType.AVAILABILITY:
             translated = translator.translate_availability(payload)
-            # For now, assume all items have the same HotelCode
             hotel_code = translated[0]["HotelCode"] if translated and "HotelCode" in translated[0] else "UNKNOWN"
             xml_string = build_avail_notif_xml(hotel_code, translated)
             xsd_path = os.path.join("schemas", "OTA_HotelAvailNotifRQ.xsd")
+        elif msg_type == MessageType.RATE:
+            translated = translator.translate_rate(payload)
+            hotel_code = translated[0]["HotelCode"] if translated and "HotelCode" in translated[0] else "UNKNOWN"
+            xml_string = build_rate_amount_notif_xml(hotel_code, translated)
+            xsd_path = os.path.join("schemas", "OTA_HotelRateAmountNotifRQ.xsd")
         else:
-            raise HTTPException(status_code=400, detail="Only 'availability' XML generation is implemented.")
+            raise HTTPException(status_code=400, detail="Unsupported message_type.")
     except Exception as e:
         logger.error(f"Translation/XML build error: {e}")
         raise HTTPException(status_code=500, detail=f"Translation/XML build error: {e}")
@@ -166,7 +171,14 @@ async def pms_post_endpoint(
         logger.error(f"XML validation error: {xsd_error}")
         raise HTTPException(status_code=500, detail=f"XML validation error: {xsd_error}")
 
-    return Response(content=xml_string, media_type="application/xml")
+    # Post to internal API
+    try:
+        internal_response = post_xml_to_internal_api(xml_string, message_type)
+    except Exception as e:
+        logger.error(f"Failed to post to internal API: {e}")
+        raise HTTPException(status_code=502, detail=f"Failed to post to internal API: {e}")
+
+    return Response(content=internal_response.text, status_code=internal_response.status_code, media_type="application/xml")
 
 
 @router.get("/pms")

@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<OTA_HotelAvailNotifRQ xmlns="http://www.opentravel.org/OTA/2003/05" TimeStamp="2025-07-03T07:18:36.691106" Target="Production" Version="1" EchoToken="1751507316">
+  <AvailStatusMessages HotelCode="lake_view_hotel">
+    <AvailStatusMessage BookingLimit="5" BookingLimitMessageType="SetLimit">
+      <StatusApplicationControl Start="2025-01-22" End="2025-02-12" InvCode="61365" RatePlanCode="rate_456"/>
+    </AvailStatusMessage>
+    <AvailStatusMessage BookingLimit="5" BookingLimitMessageType="SetLimit">
+      <StatusApplicationControl Start="2025-01-22" End="2025-02-12" InvCode="61365" RatePlanCode="rate_888"/>
+      <RestrictionStatus Status="Close"/>
+    </AvailStatusMessage>
+  </AvailStatusMessages>
+</OTA_HotelAvailNotifRQ>

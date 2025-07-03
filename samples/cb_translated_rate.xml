@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<OTA_HotelRateAmountNotifRQ xmlns="http://www.opentravel.org/OTA/2003/05" TimeStamp="2025-07-03T07:31:15.320254" Target="Production" Version="1.0" EchoToken="1751508075">
+  <RateAmountMessages HotelCode="lake_view_hotel">
+    <RateAmountMessage>
+      <StatusApplicationControl InvCode="61365" RatePlanCode="rate_456" Start="2025-01-22" End="2025-02-12"/>
+      <Rates>
+        <Rate CurrencyCode="USD"/>
+      </Rates>
+    </RateAmountMessage>
+    <RateAmountMessage>
+      <StatusApplicationControl InvCode="61365" RatePlanCode="rate_888" Start="2025-01-22" End="2025-02-12"/>
+      <Rates>
+        <Rate CurrencyCode="USD"/>
+      </Rates>
+    </RateAmountMessage>
+  </RateAmountMessages>
+</OTA_HotelRateAmountNotifRQ>
