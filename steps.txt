@@ -77,7 +77,9 @@ Step 2: Implement XML builder utility
 Step 3: Implement XSD validation utility
 Step 4: Update the API:The endpoint will return XML (with Content-Type: application/xml).
 
-
+Next steps:
+ support rate messages, and proceed to posting this XML to internal API.
+ 
 
 
 

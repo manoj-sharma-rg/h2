@@ -31,6 +31,15 @@ class CloudbedsPMSTranslator(BasePMSTranslator):
         mapping = self.mapping["availability"]
         results = []
         for inv in message.get("Inventory", []):
+            # RestrictionStatus logic
+            restriction_status = None
+            if inv.get("close") is True:
+                restriction_status = {"Status": "Close"}
+            elif inv.get("closearr") is True:
+                restriction_status = {"Status": "ClosedOnArrival"}
+            elif inv.get("closedep") is True:
+                restriction_status = {"Status": "ClosedOnDeparture"}
+            # Only include RestrictionStatus if set
             result = {
                 "HotelCode": message.get(mapping["HotelCode"]),
                 "Start": inv.get("start_date"),
@@ -45,13 +54,9 @@ class CloudbedsPMSTranslator(BasePMSTranslator):
                 "MaxAdvancedBookingOffset": inv.get("max_advanced_offset"),
                 "NumAdultsIncluded": inv.get("num_adults_included"),
                 "NumChildrenIncluded": inv.get("num_children_included"),
-                # RestrictionStatus fields
-                "RestrictionStatus": {
-                    "Close": inv.get("close"),
-                    "ClosedOnArrival": inv.get("closearr"),
-                    "ClosedOnDeparture": inv.get("closedep"),
-                },
             }
+            if restriction_status:
+                result["RestrictionStatus"] = restriction_status
             results.append(result)
         return results
 
