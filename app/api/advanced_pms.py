@@ -2,7 +2,7 @@
 Advanced PMS Integration Endpoints
 """
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request, Body
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any
 import os
@@ -15,7 +15,7 @@ async def list_pms() -> List[Dict[str, Any]]:
     """List all PMS codes and their status"""
     # TODO: Implement actual PMS registry
     return [
-        {"code": "cloudbeds", "name": "Cloudbeds", "status": "active"},
+        {"code": "cloudbeds", "name": "Cloudbeds", "status": "active", "description": "Sample PMS"},
         # ...
     ]
 
@@ -28,6 +28,16 @@ async def register_pms(
     """Register a new PMS"""
     # TODO: Save PMS info to registry
     return {"message": f"PMS '{code}' registered", "code": code, "name": name, "description": description}
+
+@router.put("/pms/{pms_code}")
+async def update_pms(
+    pms_code: str,
+    name: str = Form(...),
+    description: str = Form("")
+) -> Dict[str, Any]:
+    """Update PMS name and description"""
+    # TODO: Update PMS info in registry
+    return {"message": f"PMS '{pms_code}' updated", "code": pms_code, "name": name, "description": description}
 
 @router.delete("/pms/{pms_code}")
 async def delete_pms(pms_code: str) -> Dict[str, Any]:
@@ -67,6 +77,23 @@ async def validate_mapping(pms_code: str, request: Request) -> Dict[str, Any]:
     except Exception as e:
         return {"valid": False, "error": str(e)}
 
+@router.get("/mappings")
+async def list_mappings() -> Any:
+    """List all mapping files (without .yaml extension)"""
+    mapping_dir = "mappings"
+    files = [f for f in os.listdir(mapping_dir) if f.endswith(".yaml")]
+    mapping_codes = [os.path.splitext(f)[0] for f in files]
+    return {"mappings": mapping_codes}
+
+@router.delete("/mappings/{pms_code}")
+async def delete_mapping(pms_code: str) -> dict:
+    """Delete a mapping file for a PMS"""
+    mapping_path = os.path.join("mappings", f"{pms_code}.yaml")
+    if not os.path.exists(mapping_path):
+        raise HTTPException(status_code=404, detail="Mapping not found")
+    os.remove(mapping_path)
+    return {"message": f"Mapping for '{pms_code}' deleted"}
+
 # --- Schema Management ---
 @router.post("/schemas/{pms_code}")
 async def upload_schema(pms_code: str, file: UploadFile = File(...)) -> Dict[str, Any]:
@@ -88,6 +115,22 @@ async def get_schema(pms_code: str) -> Any:
     # Return the first one for now
     with open(os.path.join(schema_dir, files[0]), "r", encoding="utf-8") as f:
         return JSONResponse(content={"schema": f.read(), "filename": files[0]})
+
+@router.get("/schemas")
+async def list_schemas() -> dict:
+    """List all schema files in the schemas directory"""
+    schema_dir = "schemas"
+    files = [f for f in os.listdir(schema_dir) if os.path.isfile(os.path.join(schema_dir, f))]
+    return {"schemas": files}
+
+@router.delete("/schemas/{filename}")
+async def delete_schema(filename: str) -> dict:
+    """Delete a schema file by filename"""
+    schema_path = os.path.join("schemas", filename)
+    if not os.path.exists(schema_path):
+        raise HTTPException(status_code=404, detail="Schema not found")
+    os.remove(schema_path)
+    return {"message": f"Schema '{filename}' deleted"}
 
 # --- Translator Management ---
 @router.get("/translators")
