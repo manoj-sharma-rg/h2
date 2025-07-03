@@ -1,0 +1,10 @@
+created initial.txt manually
+generated brd.md 
+generated prd.md
+phase wise implementation plan in prd
+
+phase 1 
+git init
+git remote add origin https://github.com/manoj-sharma-rg/h2.git
+
+
