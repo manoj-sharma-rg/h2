@@ -10,3 +10,4 @@ plugin_registry = PluginRegistry()
 
 # Import all plugins to register them
 # This will be expanded as plugins are added 
+from .cloudbeds import CloudbedsPMSTranslator 

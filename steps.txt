@@ -14,7 +14,7 @@ git push -u origin main
 
 set PYTHONHOME=
 set PYTHONPATH=
-python -m venv venv
+python -m venv env312
 venv\\Scripts\\activate 
 pip install fastapi uvicorn pydantic pytest
 pip freeze > requirements.txt
@@ -42,5 +42,48 @@ Phase 1 Complete - What's Been Created:
 5. Documentation
 ✅ README.md - Comprehensive project documentation
 ✅ Environment Example (env.example) - Configuration template
+
+start app 'uvicorn app.main:app --reload'
 push to repo
+
+Phase 2
+i gave it a real PMS message format for cloud beds
+it created mappings folder to store pms wise mappings with cloudbeds.yaml
+it implemented a mapping loader and validator utility
+it updated plugin base to support loading and using this mapping
+
+next, 
+it implemented translation logic for cloud beds
+Update the /api/v1/pms/{pms_code} POST endpoint to:
+Look up the PMS translator for the given pms_code.
+Validate the incoming message.
+Call the appropriate translation method (translate_availability or translate_rate).
+Return the translated RGBridge data (for now, as JSON).
+If the PMS code is not registered, return a 404.
+If validation fails, return a 400.
+
+i gave curl request 
+curl -X POST "http://localhost:8000/api/v1/pms/cloudbeds?message_type=availability" \  -H "Content-Type: application/json" \  -H "X-API-Key: your-api-key-2" \  -d @samples/Cloudbeds_ARIUpdate.json
+
+What’s Working
+The Cloudbeds PMS message is being parsed and mapped to RGBridge fields.
+The /api/v1/pms/cloudbeds?message_type=availability endpoint is returning the translated data.
+The plugin system is correctly registering and using the Cloudbeds translator.
+
+
+Phase 3: RGBridge XML Generation & XSD Validation
+Step 1: Create a sample XSD for RGBridge Availability and Rate messages
+Step 2: Implement XML builder utility
+Step 3: Implement XSD validation utility
+Step 4: Update the API:The endpoint will return XML (with Content-Type: application/xml).
+
+
+
+
+
+
+
+
+
+
 

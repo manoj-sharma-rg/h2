@@ -2,14 +2,13 @@ annotated-types==0.7.0
 anyio==4.9.0
 click==8.2.1
 colorama==0.4.6
-fastapi==0.104.1
+fastapi>=0.111.0
 h11==0.16.0
 idna==3.10
 iniconfig==2.1.0
 packaging==25.0
 pluggy==1.6.0
 pydantic==2.5.0
-pydantic_core==2.33.2
 Pygments==2.19.2
 pytest==7.4.3
 pytest-cov==4.1.0

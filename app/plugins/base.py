@@ -8,6 +8,7 @@ from enum import Enum
 import logging
 
 from app.core.logging import get_logger
+from app.core.mapping_loader import mapping_loader
 
 
 class MessageType(Enum):
@@ -33,7 +34,17 @@ class BasePMSTranslator(ABC):
         """
         self.pms_code = pms_code
         self.logger = get_logger(f"translator.{pms_code}")
+        self._mapping = None
         
+    @property
+    def mapping(self) -> Dict[str, Any]:
+        """
+        Load and cache the mapping for this PMS
+        """
+        if self._mapping is None:
+            self._mapping = mapping_loader.load_mapping(self.pms_code)
+        return self._mapping
+    
     @property
     @abstractmethod
     def supported_formats(self) -> List[str]:
