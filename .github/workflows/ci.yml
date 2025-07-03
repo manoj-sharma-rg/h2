@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Backend: Python setup and tests
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run backend tests with coverage
+        run: |
+          pytest --cov=app --cov-report=xml --cov-report=term
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          # token: ${{ secrets.CODECOV_TOKEN }} # Uncomment if private repo
+
+      # Frontend: Node.js setup and build
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        run: |
+          cd ui
+          npm install
+
+      - name: Build frontend
+        run: |
+          cd ui
+          npm run build
+
+      # Docker build (backend)
+      - name: Build backend Docker image
+        run: docker build -t pms-backend .
+
+      # Docker build (frontend)
+      - name: Build frontend Docker image
+        run: docker build -t pms-frontend ./ui 

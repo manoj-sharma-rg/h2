@@ -22,8 +22,15 @@ const TestHarness = () => {
         const res = await fetch(`${API_BASE}/pms`);
         if (!res.ok) throw new Error('Failed to fetch PMS list');
         const data = await res.json();
-        setPmsList(data);
-        if (Array.isArray(data) && data.length > 0) setSelectedPMS(data[0].code);
+        // Defensive: handle both array and object with endpoints
+        let list: any[] = [];
+        if (Array.isArray(data.endpoints)) {
+          list = data.endpoints.map((code: string) => ({ code }));
+        } else if (Array.isArray(data)) {
+          list = data;
+        }
+        setPmsList(list);
+        if (list.length > 0) setSelectedPMS(list[0].code);
       } catch (err: any) {
         setErrorPMS(err.message || 'Unknown error');
       } finally {

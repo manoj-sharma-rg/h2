@@ -90,8 +90,14 @@ Posts the validated XML to your internal API endpoint (as configured).
 Returns the internal API’s response (status and body) to the caller.
 
 USER INTERFACE
-npx create-react-app ui --template typescript && cd ui && npm install @mui/material @emotion/react @emotion/styled @mui/icons-material axios @monaco-editor/react
+npx create-react-app ui --template typescript && cd ui && 
+npm install @mui/material @emotion/react @emotion/styled @mui/icons-material axios @monaco-editor/react
+npm start
 
+mappings view, delete, upload
+
+docker file
+cicd
 
 
 
