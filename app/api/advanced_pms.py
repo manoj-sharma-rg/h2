@@ -9,15 +9,16 @@ import os
 
 router = APIRouter(prefix="/api/v1")
 
+# Add this at the top, after imports
+PMS_REGISTRY = {
+    "cloudbeds": {"code": "cloudbeds", "name": "Cloudbeds", "status": "active", "description": "Sample PMS"}
+}
+
 # --- PMS Management ---
 @router.get("/pms")
 async def list_pms() -> List[Dict[str, Any]]:
     """List all PMS codes and their status"""
-    # TODO: Implement actual PMS registry
-    return [
-        {"code": "cloudbeds", "name": "Cloudbeds", "status": "active", "description": "Sample PMS"},
-        # ...
-    ]
+    return list(PMS_REGISTRY.values())
 
 @router.post("/pms")
 async def register_pms(
@@ -26,7 +27,14 @@ async def register_pms(
     description: str = Form("")
 ) -> Dict[str, Any]:
     """Register a new PMS"""
-    # TODO: Save PMS info to registry
+    if code in PMS_REGISTRY:
+        raise HTTPException(status_code=400, detail="PMS code already exists")
+    PMS_REGISTRY[code] = {
+        "code": code,
+        "name": name,
+        "status": "active",
+        "description": description
+    }
     return {"message": f"PMS '{code}' registered", "code": code, "name": name, "description": description}
 
 @router.put("/pms/{pms_code}")
@@ -36,13 +44,18 @@ async def update_pms(
     description: str = Form("")
 ) -> Dict[str, Any]:
     """Update PMS name and description"""
-    # TODO: Update PMS info in registry
+    if pms_code not in PMS_REGISTRY:
+        raise HTTPException(status_code=404, detail="PMS not found")
+    PMS_REGISTRY[pms_code]["name"] = name
+    PMS_REGISTRY[pms_code]["description"] = description
     return {"message": f"PMS '{pms_code}' updated", "code": pms_code, "name": name, "description": description}
 
 @router.delete("/pms/{pms_code}")
 async def delete_pms(pms_code: str) -> Dict[str, Any]:
     """Remove a PMS"""
-    # TODO: Remove PMS from registry
+    if pms_code not in PMS_REGISTRY:
+        raise HTTPException(status_code=404, detail="PMS not found")
+    del PMS_REGISTRY[pms_code]
     return {"message": f"PMS '{pms_code}' deleted"}
 
 # --- Mapping Management ---

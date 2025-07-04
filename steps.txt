@@ -43,7 +43,7 @@ Phase 1 Complete - What's Been Created:
 ✅ README.md - Comprehensive project documentation
 ✅ Environment Example (env.example) - Configuration template
 
-start app 'uvicorn app.main:app --reload'
+start app 'uvicorn app.main:app --reload --reload-dir app --reload-dir tests'
 push to repo
 
 Phase 2
@@ -90,7 +90,8 @@ Posts the validated XML to your internal API endpoint (as configured).
 Returns the internal API’s response (status and body) to the caller.
 
 USER INTERFACE
-npx create-react-app ui --template typescript && cd ui && 
+npx create-react-app ui --template typescript && 
+cd ui && 
 npm install @mui/material @emotion/react @emotion/styled @mui/icons-material axios @monaco-editor/react
 npm start
 
@@ -101,6 +102,15 @@ cicd
 
 test cases
 
+can u now create a UI wizard that will :
+ask for pms info 
+and do registering.
+then ask for sample message format, 
+create yaml to be saved in mappings folder by finding mappings with rgbridge intelligently 
+for unmapped properties give option in UI to do mappings 
+then create its translator in code as mentioned earlier
+
+you may ask for any custom mapping conversion and incorporate
 
 
 
