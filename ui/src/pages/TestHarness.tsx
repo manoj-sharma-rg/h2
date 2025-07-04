@@ -7,6 +7,7 @@ const TestHarness = () => {
   const [loadingPMS, setLoadingPMS] = useState(true);
   const [errorPMS, setErrorPMS] = useState<string | null>(null);
   const [selectedPMS, setSelectedPMS] = useState('');
+  const [selectedPMSConfig, setSelectedPMSConfig] = useState<any>(null);
   const [messageType, setMessageType] = useState('availability');
   const [sample, setSample] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -22,7 +23,6 @@ const TestHarness = () => {
         const res = await fetch(`${API_BASE}/pms`);
         if (!res.ok) throw new Error('Failed to fetch PMS list');
         const data = await res.json();
-        // Defensive: handle both array and object with endpoints
         let list: any[] = [];
         if (Array.isArray(data.endpoints)) {
           list = data.endpoints.map((code: string) => ({ code }));
@@ -30,7 +30,10 @@ const TestHarness = () => {
           list = data;
         }
         setPmsList(list);
-        if (list.length > 0) setSelectedPMS(list[0].code);
+        if (list.length > 0) {
+          setSelectedPMS(list[0].code);
+          setSelectedPMSConfig(list[0]);
+        }
       } catch (err: any) {
         setErrorPMS(err.message || 'Unknown error');
       } finally {
@@ -39,6 +42,11 @@ const TestHarness = () => {
     };
     fetchPMSList();
   }, []);
+
+  useEffect(() => {
+    const found = pmsList.find(p => p.code === selectedPMS);
+    setSelectedPMSConfig(found || null);
+  }, [selectedPMS, pmsList]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +85,9 @@ const TestHarness = () => {
                 <option key={pms.code} value={pms.code}>{pms.name || pms.code}</option>
               ))}
             </select>
+            {selectedPMSConfig && selectedPMSConfig.combined_avail_rate && (
+              <span style={{ color: '#1976d2', marginLeft: 12 }}>[Combined Avail+Rate]</span>
+            )}
           </label>
         </div>
         <div style={{ marginBottom: 8 }}>
@@ -111,21 +122,56 @@ const TestHarness = () => {
       {result && (
         <div style={{ padding: 16, border: '1px solid #ccc', borderRadius: 8, background: '#fafbfc' }}>
           <h2>Translation Result</h2>
-          <div>
-            <b>Valid:</b> {String(result.valid)}
-          </div>
-          {result.error && (
-            <div style={{ color: 'red' }}><b>Error:</b> {result.error}</div>
-          )}
-          <div style={{ marginTop: 12 }}>
-            <b>XML Output:</b>
-            <pre style={{ background: '#222', color: '#fff', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{result.xml}</pre>
-          </div>
-          {result.translated && (
-            <details style={{ marginTop: 12 }}>
-              <summary>Raw Translation Output</summary>
-              <pre style={{ background: '#eee', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{JSON.stringify(result.translated, null, 2)}</pre>
-            </details>
+          {selectedPMSConfig && selectedPMSConfig.combined_avail_rate && result.availability && result.rate ? (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                <b>Availability</b>
+                <div><b>Valid:</b> {String(result.availability.valid)}</div>
+                <div style={{ marginTop: 8 }}>
+                  <b>XML Output:</b>
+                  <pre style={{ background: '#222', color: '#fff', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{result.availability.xml}</pre>
+                </div>
+                {result.availability.translated && (
+                  <details style={{ marginTop: 8 }}>
+                    <summary>Raw Translation Output</summary>
+                    <pre style={{ background: '#eee', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{JSON.stringify(result.availability.translated, null, 2)}</pre>
+                  </details>
+                )}
+              </div>
+              <div>
+                <b>Rate</b>
+                <div><b>Valid:</b> {String(result.rate.valid)}</div>
+                <div style={{ marginTop: 8 }}>
+                  <b>XML Output:</b>
+                  <pre style={{ background: '#222', color: '#fff', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{result.rate.xml}</pre>
+                </div>
+                {result.rate.translated && (
+                  <details style={{ marginTop: 8 }}>
+                    <summary>Raw Translation Output</summary>
+                    <pre style={{ background: '#eee', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{JSON.stringify(result.rate.translated, null, 2)}</pre>
+                  </details>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <b>Valid:</b> {String(result.valid)}
+              </div>
+              {result.error && (
+                <div style={{ color: 'red' }}><b>Error:</b> {result.error}</div>
+              )}
+              <div style={{ marginTop: 12 }}>
+                <b>XML Output:</b>
+                <pre style={{ background: '#222', color: '#fff', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{result.xml}</pre>
+              </div>
+              {result.translated && (
+                <details style={{ marginTop: 12 }}>
+                  <summary>Raw Translation Output</summary>
+                  <pre style={{ background: '#eee', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{JSON.stringify(result.translated, null, 2)}</pre>
+                </details>
+              )}
+            </>
           )}
         </div>
       )}

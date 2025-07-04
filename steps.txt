@@ -1,3 +1,15 @@
+to run api
+env312\\Scripts\\activate 
+pip install -r requirements.txt
+uvicorn app.main:app --reload --reload-dir app --reload-dir tests
+
+to run ui app
+install node.js
+npm install 
+npm start
+--------------------
+
+
 created initial.txt manually
 generated brd.md 
 generated prd.md
