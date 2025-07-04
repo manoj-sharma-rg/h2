@@ -40,6 +40,7 @@ interface PMSWizardData {
   customConversions: Record<string, string>;
   translatorCode: string;
   mappingYaml: string;
+  combinedAvailRate?: boolean;
 }
 
 const PMSIntegrationWizard = () => {
@@ -55,7 +56,8 @@ const PMSIntegrationWizard = () => {
     rateMappings: {},
     customConversions: {},
     translatorCode: '',
-    mappingYaml: ''
+    mappingYaml: '',
+    combinedAvailRate: false
   });
 
   const [loading, setLoading] = useState(false);
@@ -73,7 +75,7 @@ const PMSIntegrationWizard = () => {
     'Code Generation & Registration'
   ];
 
-  const handlePMSInfoChange = (field: keyof PMSWizardData, value: string) => {
+  const handlePMSInfoChange = (field: keyof PMSWizardData, value: any) => {
     setWizardData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -102,7 +104,8 @@ const PMSIntegrationWizard = () => {
       rateMappings: {},
       customConversions: {},
       translatorCode: '',
-      mappingYaml: ''
+      mappingYaml: '',
+      combinedAvailRate: false
     });
     setError(null);
     setSuccess(null);
@@ -222,7 +225,8 @@ const PMSIntegrationWizard = () => {
         body: new URLSearchParams({
           code: wizardData.pmsCode,
           name: wizardData.pmsName,
-          description: wizardData.pmsDescription
+          description: wizardData.pmsDescription,
+          combined_avail_rate: String(!!wizardData.combinedAvailRate)
         })
       });
 
@@ -304,6 +308,17 @@ const PMSIntegrationWizard = () => {
                   helperText="Brief description of the PMS"
                 />
               </Grid>
+              <Grid item xs={12}>
+                <label style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!wizardData.combinedAvailRate}
+                    onChange={e => handlePMSInfoChange('combinedAvailRate', e.target.checked)}
+                    style={{ marginRight: 8 }}
+                  />
+                  This PMS sends combined availability+rate messages
+                </label>
+              </Grid>
             </Grid>
           </Paper>
         );
@@ -326,35 +341,52 @@ const PMSIntegrationWizard = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={6}
-                  label="Sample Availability Message"
-                  value={wizardData.sampleAvailabilityMessage}
-                  onChange={(e) => handlePMSInfoChange('sampleAvailabilityMessage', e.target.value)}
-                  helperText="Paste a sample availability message from the PMS"
-                  placeholder='{"hotel_id": "123", "room_type": "KING", "available": true, ...}'
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={6}
-                  label="Sample Rate Message"
-                  value={wizardData.sampleRateMessage}
-                  onChange={(e) => handlePMSInfoChange('sampleRateMessage', e.target.value)}
-                  helperText="Paste a sample rate message from the PMS"
-                  placeholder='{"hotel_id": "123", "room_type": "KING", "rate": 100.00, ...}'
-                />
-              </Grid>
+              {wizardData.combinedAvailRate ? (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={6}
+                    label="Sample Combined Availability+Rate Message"
+                    value={wizardData.sampleAvailabilityMessage}
+                    onChange={(e) => handlePMSInfoChange('sampleAvailabilityMessage', e.target.value)}
+                    helperText="Paste a sample combined availability+rate message from the PMS"
+                    placeholder='{"hotel_id": "123", "room_type": "KING", "available": true, "rate": 100.00, ...}'
+                  />
+                </Grid>
+              ) : (
+                <>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={6}
+                      label="Sample Availability Message"
+                      value={wizardData.sampleAvailabilityMessage}
+                      onChange={(e) => handlePMSInfoChange('sampleAvailabilityMessage', e.target.value)}
+                      helperText="Paste a sample availability message from the PMS"
+                      placeholder='{"hotel_id": "123", "room_type": "KING", "available": true, ...}'
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={6}
+                      label="Sample Rate Message"
+                      value={wizardData.sampleRateMessage}
+                      onChange={(e) => handlePMSInfoChange('sampleRateMessage', e.target.value)}
+                      helperText="Paste a sample rate message from the PMS"
+                      placeholder='{"hotel_id": "123", "room_type": "KING", "rate": 100.00, ...}'
+                    />
+                  </Grid>
+                </>
+              )}
               <Grid item xs={12}>
                 <Button
                   variant="contained"
                   onClick={analyzeMessageFormat}
-                  disabled={loading || !wizardData.sampleAvailabilityMessage || !wizardData.sampleRateMessage}
+                  disabled={loading || (wizardData.combinedAvailRate ? !wizardData.sampleAvailabilityMessage : (!wizardData.sampleAvailabilityMessage || !wizardData.sampleRateMessage))}
                   startIcon={loading ? <CircularProgress size={20} /> : <Code />}
                 >
                   {loading ? 'Analyzing...' : 'Analyze Message Format'}
@@ -368,69 +400,101 @@ const PMSIntegrationWizard = () => {
         return (
           <Paper sx={{ p: 3, my: 2 }}>
             <Typography variant="h6" gutterBottom>Mapping Configuration</Typography>
-            
-            <Accordion defaultExpanded>
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Typography variant="subtitle1">Availability Mappings</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Grid container spacing={2}>
-                  {Object.entries(wizardData.availabilityMappings).map(([field, mapping]) => (
-                    <Grid item xs={12} md={6} key={field}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <TextField
-                          size="small"
-                          label="PMS Field"
-                          value={field}
-                          disabled
-                          sx={{ flexGrow: 1 }}
-                        />
-                        <Typography>→</Typography>
-                        <TextField
-                          size="small"
-                          label="RGBridge Field"
-                          value={mapping}
-                          onChange={(e) => handleMappingChange('availability', field, e.target.value)}
-                          sx={{ flexGrow: 1 }}
-                        />
-                      </Box>
+            {wizardData.combinedAvailRate ? (
+              <Accordion defaultExpanded>
+                <AccordionSummary expandIcon={<ExpandMore />}>
+                  <Typography variant="subtitle1">Combined Mappings</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Grid container spacing={2}>
+                    {Object.entries(wizardData.availabilityMappings).map(([field, mapping]) => (
+                      <Grid item xs={12} md={6} key={field}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <TextField
+                            size="small"
+                            label="PMS Field"
+                            value={field}
+                            disabled
+                            sx={{ flexGrow: 1 }}
+                          />
+                          <Typography>→</Typography>
+                          <TextField
+                            size="small"
+                            label="RGBridge Field"
+                            value={mapping}
+                            onChange={(e) => handleMappingChange('availability', field, e.target.value)}
+                            sx={{ flexGrow: 1 }}
+                          />
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </AccordionDetails>
+              </Accordion>
+            ) : (
+              <>
+                <Accordion defaultExpanded>
+                  <AccordionSummary expandIcon={<ExpandMore />}>
+                    <Typography variant="subtitle1">Availability Mappings</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={2}>
+                      {Object.entries(wizardData.availabilityMappings).map(([field, mapping]) => (
+                        <Grid item xs={12} md={6} key={field}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <TextField
+                              size="small"
+                              label="PMS Field"
+                              value={field}
+                              disabled
+                              sx={{ flexGrow: 1 }}
+                            />
+                            <Typography>→</Typography>
+                            <TextField
+                              size="small"
+                              label="RGBridge Field"
+                              value={mapping}
+                              onChange={(e) => handleMappingChange('availability', field, e.target.value)}
+                              sx={{ flexGrow: 1 }}
+                            />
+                          </Box>
+                        </Grid>
+                      ))}
                     </Grid>
-                  ))}
-                </Grid>
-              </AccordionDetails>
-            </Accordion>
-
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Typography variant="subtitle1">Rate Mappings</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Grid container spacing={2}>
-                  {Object.entries(wizardData.rateMappings).map(([field, mapping]) => (
-                    <Grid item xs={12} md={6} key={field}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <TextField
-                          size="small"
-                          label="PMS Field"
-                          value={field}
-                          disabled
-                          sx={{ flexGrow: 1 }}
-                        />
-                        <Typography>→</Typography>
-                        <TextField
-                          size="small"
-                          label="RGBridge Field"
-                          value={mapping}
-                          onChange={(e) => handleMappingChange('rate', field, e.target.value)}
-                          sx={{ flexGrow: 1 }}
-                        />
-                      </Box>
+                  </AccordionDetails>
+                </Accordion>
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMore />}>
+                    <Typography variant="subtitle1">Rate Mappings</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={2}>
+                      {Object.entries(wizardData.rateMappings).map(([field, mapping]) => (
+                        <Grid item xs={12} md={6} key={field}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <TextField
+                              size="small"
+                              label="PMS Field"
+                              value={field}
+                              disabled
+                              sx={{ flexGrow: 1 }}
+                            />
+                            <Typography>→</Typography>
+                            <TextField
+                              size="small"
+                              label="RGBridge Field"
+                              value={mapping}
+                              onChange={(e) => handleMappingChange('rate', field, e.target.value)}
+                              sx={{ flexGrow: 1 }}
+                            />
+                          </Box>
+                        </Grid>
+                      ))}
                     </Grid>
-                  ))}
-                </Grid>
-              </AccordionDetails>
-            </Accordion>
-
+                  </AccordionDetails>
+                </Accordion>
+              </>
+            )}
             {unmappedFields.length > 0 && (
               <Accordion>
                 <AccordionSummary expandIcon={<ExpandMore />}>

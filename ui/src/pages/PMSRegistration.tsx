@@ -18,6 +18,8 @@ const PMSRegistration = () => {
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [combinedAvailRate, setCombinedAvailRate] = useState(false);
+  const [editCombinedAvailRate, setEditCombinedAvailRate] = useState(false);
   const codeRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const descRef = useRef<HTMLInputElement>(null);
@@ -60,6 +62,7 @@ const PMSRegistration = () => {
       formData.append('code', code);
       formData.append('name', name);
       formData.append('description', description || '');
+      formData.append('combined_avail_rate', String(combinedAvailRate));
       const res = await fetch(`${API_BASE}/pms`, {
         method: 'POST',
         body: formData,
@@ -69,6 +72,7 @@ const PMSRegistration = () => {
       if (codeRef.current) codeRef.current.value = '';
       if (nameRef.current) nameRef.current.value = '';
       if (descRef.current) descRef.current.value = '';
+      setCombinedAvailRate(false);
       await fetchPMSList();
     } catch (err: any) {
       setRegisterError(err.message || 'Unknown error');
@@ -100,6 +104,7 @@ const PMSRegistration = () => {
     setEditing(pms.code);
     setEditName(pms.name || '');
     setEditDesc(pms.description || '');
+    setEditCombinedAvailRate(!!pms.combined_avail_rate);
     setEditError(null);
     setEditSuccess(null);
   };
@@ -108,6 +113,7 @@ const PMSRegistration = () => {
     setEditing(null);
     setEditName('');
     setEditDesc('');
+    setEditCombinedAvailRate(false);
     setEditError(null);
     setEditSuccess(null);
   };
@@ -120,6 +126,7 @@ const PMSRegistration = () => {
       const formData = new FormData();
       formData.append('name', editName);
       formData.append('description', editDesc);
+      formData.append('combined_avail_rate', String(editCombinedAvailRate));
       const res = await fetch(`${API_BASE}/pms/${code}`, {
         method: 'PUT',
         body: formData,
@@ -148,6 +155,17 @@ const PMSRegistration = () => {
         </div>
         <div style={{ marginBottom: 8 }}>
           <label>Description: <input type="text" ref={descRef} disabled={registering} /></label>
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <label>
+            <input
+              type="checkbox"
+              checked={combinedAvailRate}
+              onChange={e => setCombinedAvailRate(e.target.checked)}
+              disabled={registering}
+            />{' '}
+            This PMS sends combined availability+rate messages
+          </label>
         </div>
         <button type="submit" disabled={registering}>Register</button>
         {registering && <span style={{ marginLeft: 12 }}>Registering...</span>}
@@ -181,6 +199,15 @@ const PMSRegistration = () => {
                     disabled={savingEdit}
                     style={{ marginRight: 8 }}
                   />
+                  <label style={{ marginRight: 8 }}>
+                    <input
+                      type="checkbox"
+                      checked={editCombinedAvailRate}
+                      onChange={e => setEditCombinedAvailRate(e.target.checked)}
+                      disabled={savingEdit}
+                    />{' '}
+                    Combined Avail+Rate
+                  </label>
                   <button type="submit" disabled={savingEdit}>Save</button>
                   <button type="button" onClick={handleCancelEdit} disabled={savingEdit} style={{ marginLeft: 4 }}>Cancel</button>
                   {savingEdit && <span style={{ marginLeft: 8 }}>Saving...</span>}
@@ -191,6 +218,7 @@ const PMSRegistration = () => {
                 <>
                   <b>{pms.code}</b> - {pms.name} {pms.status && <span>({pms.status})</span>}
                   {pms.description && <span>: {pms.description}</span>}
+                  {pms.combined_avail_rate && <span style={{ color: '#1976d2', marginLeft: 8 }}>[Combined Avail+Rate]</span>}
                   <button
                     onClick={() => handleEdit(pms)}
                     style={{ marginLeft: 8 }}

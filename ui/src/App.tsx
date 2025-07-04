@@ -20,10 +20,10 @@ function App() {
         <main className="App-main">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/pms-wizard" element={<PMSIntegrationWizard />} />
             <Route path="/mappings" element={<Mappings />} />
             <Route path="/schemas" element={<Schemas />} />
             <Route path="/pms-registration" element={<PMSRegistration />} />
-            <Route path="/pms-wizard" element={<PMSIntegrationWizard />} />
             <Route path="/test-harness" element={<TestHarness />} />
           </Routes>
         </main>
