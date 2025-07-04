@@ -386,7 +386,7 @@ const PMSIntegrationWizard = () => {
                 <Button
                   variant="contained"
                   onClick={analyzeMessageFormat}
-                  disabled={loading || (!wizardData.sampleAvailabilityMessage && !wizardData.combinedAvailRate) || (!wizardData.sampleAvailabilityMessage || !wizardData.sampleRateMessage) && !wizardData.combinedAvailRate === false}
+                  disabled={loading || (wizardData.combinedAvailRate ? !wizardData.sampleAvailabilityMessage : (!wizardData.sampleAvailabilityMessage || !wizardData.sampleRateMessage))}
                   startIcon={loading ? <CircularProgress size={20} /> : <Code />}
                 >
                   {loading ? 'Analyzing...' : 'Analyze Message Format'}

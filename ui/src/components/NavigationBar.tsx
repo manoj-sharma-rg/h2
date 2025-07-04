@@ -8,6 +8,9 @@ const NavigationBar = () => {
       <NavLink to="/" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
         Dashboard
       </NavLink>
+      <NavLink to="/pms-wizard" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+        PMS Wizard
+      </NavLink>
       <NavLink to="/mappings" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
         Mappings
       </NavLink>
@@ -16,9 +19,6 @@ const NavigationBar = () => {
       </NavLink>
       <NavLink to="/pms-registration" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
         PMS Registration
-      </NavLink>
-      <NavLink to="/pms-wizard" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-        PMS Wizard
       </NavLink>
       <NavLink to="/test-harness" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
         Test Harness
