@@ -178,21 +178,4 @@ async def pms_post_endpoint(
         logger.error(f"Failed to post to internal API: {e}")
         raise HTTPException(status_code=502, detail=f"Failed to post to internal API: {e}")
 
-    return Response(content=internal_response.text, status_code=internal_response.status_code, media_type="application/xml")
-
-
-@router.get("/pms")
-async def list_pms_endpoints() -> Dict[str, Any]:
-    """
-    List available PMS endpoints
-    
-    Returns:
-        List of configured PMS endpoints
-    """
-    # TODO: Return list of configured PMS endpoints
-    # This will be populated from plugin system in Phase 6
-    
-    return {
-        "message": "PMS endpoints",
-        "endpoints": plugin_registry.list_translators()
-    } 
+    return Response(content=internal_response.text, status_code=internal_response.status_code, media_type="application/xml") 
