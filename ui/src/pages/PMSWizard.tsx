@@ -116,15 +116,20 @@ const PMSIntegrationWizard = () => {
     setError(null);
     
     try {
+      let analyzePayload: any = {
+        pms_code: wizardData.pmsCode,
+        message_format: wizardData.messageFormat
+      };
+      if (wizardData.sampleAvailabilityMessage && wizardData.sampleRateMessage) {
+        analyzePayload.availability_message = wizardData.sampleAvailabilityMessage;
+        analyzePayload.rate_message = wizardData.sampleRateMessage;
+      } else if (wizardData.sampleAvailabilityMessage || wizardData.sampleRateMessage) {
+        analyzePayload.combined_message = wizardData.sampleAvailabilityMessage || wizardData.sampleRateMessage;
+      }
       const response = await fetch(`${API_BASE}/wizard/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pms_code: wizardData.pmsCode,
-          availability_message: wizardData.sampleAvailabilityMessage,
-          rate_message: wizardData.sampleRateMessage,
-          message_format: wizardData.messageFormat
-        })
+        body: JSON.stringify(analyzePayload)
       });
 
       if (!response.ok) throw new Error('Failed to analyze message format');

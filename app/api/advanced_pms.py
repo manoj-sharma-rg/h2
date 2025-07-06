@@ -66,7 +66,7 @@ async def delete_pms(pms_code: str) -> Dict[str, Any]:
 @router.get("/mappings/{pms_code}")
 async def get_mapping(pms_code: str) -> Any:
     """Get mapping file for a PMS"""
-    mapping_path = os.path.join("mappings", f"{pms_code}.yaml")
+    mapping_path = os.path.join("pms", pms_code, "mapping.yaml")
     if not os.path.exists(mapping_path):
         raise HTTPException(status_code=404, detail="Mapping not found")
     with open(mapping_path, "r", encoding="utf-8") as f:
@@ -75,7 +75,9 @@ async def get_mapping(pms_code: str) -> Any:
 @router.post("/mappings/{pms_code}")
 async def upload_mapping(pms_code: str, file: UploadFile = File(...)) -> Dict[str, Any]:
     """Upload or update mapping file"""
-    mapping_path = os.path.join("mappings", f"{pms_code}.yaml")
+    pms_dir = os.path.join("pms", pms_code)
+    os.makedirs(pms_dir, exist_ok=True)
+    mapping_path = os.path.join(pms_dir, "mapping.yaml")
     content = await file.read()
     with open(mapping_path, "wb") as f:
         f.write(content)
@@ -85,8 +87,6 @@ async def upload_mapping(pms_code: str, file: UploadFile = File(...)) -> Dict[st
 async def validate_mapping(pms_code: str, request: Request) -> Dict[str, Any]:
     """Validate mapping file"""
     data = await request.body()
-    # TODO: Validate YAML structure and required fields
-    # For now, just check if it's valid YAML
     import yaml
     try:
         yaml.safe_load(data)
@@ -97,15 +97,19 @@ async def validate_mapping(pms_code: str, request: Request) -> Dict[str, Any]:
 @router.get("/mappings")
 async def list_mappings() -> Any:
     """List all mapping files (without .yaml extension)"""
-    mapping_dir = "mappings"
-    files = [f for f in os.listdir(mapping_dir) if f.endswith(".yaml")]
-    mapping_codes = [os.path.splitext(f)[0] for f in files]
+    pms_root = "pms"
+    mapping_codes = []
+    if os.path.isdir(pms_root):
+        for pms_code in os.listdir(pms_root):
+            mapping_path = os.path.join(pms_root, pms_code, "mapping.yaml")
+            if os.path.isfile(mapping_path):
+                mapping_codes.append(pms_code)
     return {"mappings": mapping_codes}
 
 @router.delete("/mappings/{pms_code}")
 async def delete_mapping(pms_code: str) -> dict:
     """Delete a mapping file for a PMS"""
-    mapping_path = os.path.join("mappings", f"{pms_code}.yaml")
+    mapping_path = os.path.join("pms", pms_code, "mapping.yaml")
     if not os.path.exists(mapping_path):
         raise HTTPException(status_code=404, detail="Mapping not found")
     os.remove(mapping_path)

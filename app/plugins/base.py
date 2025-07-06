@@ -117,7 +117,7 @@ class BasePMSTranslator(ABC):
         Returns:
             Path to the mapping file
         """
-        return f"mappings/{self.pms_code}.yaml"
+        return f"pms/{self.pms_code}/mapping.yaml"
     
     def log_translation(self, message_type: MessageType, success: bool, error: Optional[str] = None):
         """

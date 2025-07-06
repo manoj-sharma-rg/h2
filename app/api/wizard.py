@@ -143,10 +143,15 @@ async def analyze_message_format(request: Dict[str, Any]) -> Dict[str, Any]:
         pms_code = request.get('pms_code', '')
         availability_message = request.get('availability_message', '')
         rate_message = request.get('rate_message', '')
+        combined_message = request.get('combined_message', '')
         message_format = request.get('message_format', 'json')
         
+        # If both are missing, but combined_message is present, try to use it for both
+        if not availability_message and not rate_message and combined_message:
+            availability_message = combined_message
+            rate_message = combined_message
         if not availability_message or not rate_message:
-            raise HTTPException(status_code=400, detail="Both availability and rate messages are required")
+            raise HTTPException(status_code=400, detail="Both availability and rate messages are required (or provide combined_message)")
         
         # Extract fields based on format
         if message_format == 'json':

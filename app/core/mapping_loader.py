@@ -12,10 +12,10 @@ class MappingLoader:
     Loads and validates PMS mapping YAML files
     """
     def __init__(self, mapping_dir: str = None):
-        self.mapping_dir = mapping_dir or settings.MAPPING_DIR
+        pass  # mapping_dir is no longer used
 
     def get_mapping_path(self, pms_code: str) -> str:
-        return os.path.join(self.mapping_dir, f"{pms_code}.yaml")
+        return os.path.join("pms", pms_code, "mapping.yaml")
 
     def load_mapping(self, pms_code: str) -> Dict[str, Any]:
         path = self.get_mapping_path(pms_code)
