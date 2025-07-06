@@ -1,0 +1,23 @@
+pms_code: cb
+availability:
+  inventory.rate: RatePlanCode
+  inventory.end_date: Start
+  inventory.start_date: Start
+  inventory.min_los: MinLOS
+  inventory: InvCode
+  mya_property_id: HotelCode
+  inventory.max_los: MaxLOS
+  ota_property_id: HotelCode
+rate:
+  inventory.rate: RatePlanCode
+  inventory.end_date: Start
+  inventory.start_date: Start
+  inventory: InvCode
+  mya_property_id: HotelCode
+  inventory.ota_rate_id: AmountBeforeTax
+  ota_property_id: HotelCode
+  currency: CurrencyCode
+conversions: {}
+metadata:
+  created_at: '2025-07-04T15:35:32.375922'
+  version: '1.0'
