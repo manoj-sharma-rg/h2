@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.opentravel.org/OTA/2003/05"
+           xmlns="http://www.opentravel.org/OTA/2003/05"
+           elementFormDefault="qualified">
+
+  <xs:element name="OTA_HotelRateAmountNotifRQ">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="RateAmountMessages">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="RateAmountMessage" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="StatusApplicationControl">
+                      <xs:complexType>
+                        <xs:attribute name="InvCode" type="xs:string" use="required"/>
+                        <xs:attribute name="RatePlanCode" type="xs:string" use="required"/>
+                        <xs:attribute name="Start" type="xs:date" use="required"/>
+                        <xs:attribute name="End" type="xs:date" use="required"/>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="Rates">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="Rate" maxOccurs="unbounded">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="BaseByGuestAmts" minOccurs="0">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="BaseByGuestAmt" maxOccurs="unbounded">
+                                        <xs:complexType>
+                                          <xs:attribute name="AmountBeforeTax" type="xs:decimal"/>
+                                          <xs:attribute name="AmountAfterTax" type="xs:decimal"/>
+                                          <xs:attribute name="AgeQualifyingCode" type="xs:string"/>
+                                          <xs:attribute name="NumberOfGuests" type="xs:integer"/>
+                                        </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+                                <xs:element name="GuaranteePolicies" minOccurs="0">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="GuaranteePolicy" maxOccurs="unbounded">
+                                        <xs:complexType>
+                                          <xs:attribute name="GuaranteeCode" type="xs:string"/>
+                                        </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+                                <xs:element name="CancelPolicies" minOccurs="0">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="CancelPenalty" maxOccurs="unbounded">
+                                        <xs:complexType>
+                                          <xs:sequence>
+                                            <xs:element name="Deadline" minOccurs="0">
+                                              <xs:complexType>
+                                                <xs:attribute name="AbsoluteDeadline" type="xs:dateTime"/>
+                                                <xs:attribute name="OffsetDropTime" type="xs:string"/>
+                                                <xs:attribute name="OffsetTimeUnit" type="xs:string"/>
+                                                <xs:attribute name="OffsetUnitMultiplier" type="xs:integer"/>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="AmountPercent" minOccurs="0">
+                                              <xs:complexType>
+                                                <xs:attribute name="NmbrOfNights" type="xs:integer"/>
+                                                <xs:attribute name="Amount" type="xs:decimal"/>
+                                                <xs:attribute name="Percent" type="xs:decimal"/>
+                                                <xs:attribute name="CurrencyCode" type="xs:string"/>
+                                                <xs:attribute name="TaxInclusive" type="xs:boolean"/>
+                                                <xs:attribute name="FeesInclusive" type="xs:boolean"/>
+                                                <xs:attribute name="BasisType" type="xs:string"/>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="PenaltyDescription" minOccurs="0">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element name="Text" type="xs:string" minOccurs="0"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                          </xs:sequence>
+                                          <xs:attribute name="NonRefundable" type="xs:boolean"/>
+                                        </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+                                <xs:element name="MealsIncluded" minOccurs="0">
+                                  <xs:complexType>
+                                    <xs:attribute name="MealPlanCodes" type="xs:string"/>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:sequence>
+                              <xs:attribute name="CurrencyCode" type="xs:string"/>
+                              <xs:attribute name="UnitMultiplier" type="xs:integer"/>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="HotelCode" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="TimeStamp" type="xs:dateTime" use="required"/>
+      <xs:attribute name="Target" type="xs:string"/>
+      <xs:attribute name="Version" type="xs:string"/>
+      <xs:attribute name="EchoToken" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema> 

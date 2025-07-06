@@ -21,10 +21,17 @@ import {
   DialogActions,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  Autocomplete,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Tooltip,
+  ListSubheader
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { ExpandMore, Code, Download } from '@mui/icons-material';
+import InfoIcon from '@mui/icons-material/Info';
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
@@ -41,6 +48,40 @@ interface PMSWizardData {
   translatorCode: string;
   mappingYaml: string;
   combinedAvailRate?: boolean;
+}
+
+const availFields = [
+  { value: 'HotelCode', label: 'HotelCode' },
+  { value: 'InvCode', label: 'InvCode' },
+  { value: 'RatePlanCode', label: 'RatePlanCode' },
+  { value: 'Status', label: 'Status' },
+  // ...add more as needed
+];
+const rateFields = [
+  { value: 'HotelCode', label: 'HotelCode' },
+  { value: 'InvCode', label: 'InvCode' },
+  { value: 'RatePlanCode', label: 'RatePlanCode' },
+  { value: 'AmountBeforeTax', label: 'AmountBeforeTax' },
+  { value: 'AmountAfterTax', label: 'AmountAfterTax' },
+  // ...add more as needed
+];
+const conversionTemplates = [
+  'value / 100',
+  'str(value)',
+  'parse_date(value)',
+  'value1 + value2',
+];
+function getFieldDescription(field: string) {
+  // Add descriptions for RGBridge fields
+  const descs: Record<string, string> = {
+    HotelCode: 'Unique hotel identifier',
+    InvCode: 'Room or inventory code',
+    RatePlanCode: 'Rate plan code',
+    AmountBeforeTax: 'Rate before tax',
+    AmountAfterTax: 'Rate after tax',
+    Status: 'Availability status',
+  };
+  return descs[field] || '';
 }
 
 const PMSIntegrationWizard = () => {
@@ -67,6 +108,9 @@ const PMSIntegrationWizard = () => {
   const [mappingDialogOpen, setMappingDialogOpen] = useState(false);
   const [currentMappingField, setCurrentMappingField] = useState('');
   const [currentMappingValue, setCurrentMappingValue] = useState('');
+  const [mappingDialogType, setMappingDialogType] = useState<'availability' | 'rate'>('availability');
+  const [mappingDialogFieldObj, setMappingDialogFieldObj] = useState<{ value: string, label: string } | null>(null);
+  const [mappingDialogConversion, setMappingDialogConversion] = useState('');
 
   const steps = [
     'PMS Information',
@@ -178,6 +222,25 @@ const PMSIntegrationWizard = () => {
         }
       }));
       setMappingDialogOpen(false);
+    }
+  };
+
+  const handleAddAdvancedMapping = () => {
+    if (mappingDialogFieldObj) {
+      handleMappingChange(mappingDialogType, currentMappingField, mappingDialogFieldObj.value);
+      if (mappingDialogConversion.trim()) {
+        setWizardData(prev => ({
+          ...prev,
+          customConversions: {
+            ...prev.customConversions,
+            [currentMappingField]: mappingDialogConversion.trim(),
+          },
+        }));
+      }
+      setMappingDialogOpen(false);
+      setMappingDialogType('availability');
+      setMappingDialogFieldObj(null);
+      setMappingDialogConversion('');
     }
   };
 
@@ -396,6 +459,11 @@ const PMSIntegrationWizard = () => {
                 >
                   {loading ? 'Analyzing...' : 'Analyze Message Format'}
                 </Button>
+                {success && (
+                  <Alert severity="success" sx={{ mt: 2 }}>
+                    {success}
+                  </Alert>
+                )}
               </Grid>
             </Grid>
           </Paper>
@@ -632,12 +700,6 @@ const PMSIntegrationWizard = () => {
         </Alert>
       )}
 
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-
       {renderStepContent(activeStep)}
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
@@ -664,18 +726,45 @@ const PMSIntegrationWizard = () => {
       <Dialog open={mappingDialogOpen} onClose={() => setMappingDialogOpen(false)}>
         <DialogTitle>Add Mapping for "{currentMappingField}"</DialogTitle>
         <DialogContent>
+          <RadioGroup
+            row
+            value={mappingDialogType || 'availability'}
+            onChange={e => setMappingDialogType((e.target.value as 'availability' | 'rate'))}
+            sx={{ mb: 2 }}
+          >
+            <FormControlLabel value="availability" control={<Radio />} label="Availability" />
+            <FormControlLabel value="rate" control={<Radio />} label="Rate" />
+          </RadioGroup>
+          <Autocomplete
+            options={mappingDialogType === 'rate' ? rateFields : availFields}
+            groupBy={option => mappingDialogType === 'rate' ? 'Rate' : 'Availability'}
+            getOptionLabel={option => option.label}
+            value={mappingDialogFieldObj}
+            onChange={(_, value) => setMappingDialogFieldObj(value)}
+            renderInput={params => <TextField {...params} label="RGBridge Field" />}
+            sx={{ mb: 2 }}
+          />
+          <Tooltip title={getFieldDescription(mappingDialogFieldObj?.value || '')}>
+            <InfoIcon sx={{ mb: 2, ml: 1 }} />
+          </Tooltip>
+          <Autocomplete
+            options={conversionTemplates}
+            onChange={(_, value) => setMappingDialogConversion(value || '')}
+            renderInput={params => <TextField {...params} label="Conversion Template (optional)" />}
+            sx={{ mb: 2 }}
+          />
           <TextField
             fullWidth
-            label="RGBridge Field"
-            value={currentMappingValue}
-            onChange={(e) => setCurrentMappingValue(e.target.value)}
-            helperText="Enter the corresponding RGBridge field name"
-            sx={{ mt: 1 }}
+            label="Custom Conversion (optional)"
+            value={mappingDialogConversion}
+            onChange={e => setMappingDialogConversion(e.target.value)}
+            placeholder="e.g. value / 100"
+            sx={{ mb: 2 }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setMappingDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleAddMapping} variant="contained">Add</Button>
+          <Button onClick={handleAddAdvancedMapping} variant="contained">Add</Button>
         </DialogActions>
       </Dialog>
     </Box>

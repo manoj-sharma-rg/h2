@@ -1,0 +1,36 @@
+# Cloudbeds PMS to RGBridge Mapping
+# This YAML file defines how Cloudbeds ARIUpdate fields map to RGBridge message fields.
+# Structure:
+#   - Top-level keys: 'availability', 'rate'
+#   - Each key maps RGBridge fields to Cloudbeds JSON paths
+
+availability:
+  HotelCode: ota_property_id
+  Start: Inventory[].start_date
+  End: Inventory[].end_date
+  InvCode: Inventory[].ota_room_id
+  RatePlanCode: Inventory[].ota_rate_id
+  BookingLimit: Inventory[].units
+  CurrencyCode: currency
+  MinLOS: Inventory[].min_los
+  MaxLOS: Inventory[].max_los
+  MinAdvancedBookingOffset: Inventory[].min_advanced_offset
+  MaxAdvancedBookingOffset: Inventory[].max_advanced_offset
+  RestrictionStatus:
+    Close: Inventory[].close
+    ClosedOnArrival: Inventory[].closearr
+    ClosedOnDeparture: Inventory[].closedep
+  NumAdultsIncluded: Inventory[].num_adults_included
+  NumChildrenIncluded: Inventory[].num_children_included
+
+rate:
+  HotelCode: ota_property_id
+  Start: Inventory[].start_date
+  End: Inventory[].end_date
+  InvCode: Inventory[].ota_room_id
+  RatePlanCode: Inventory[].ota_rate_id
+  CurrencyCode: currency
+  BaseRate: Inventory[].rate
+  RdefSingle: Inventory[].rdef_single
+  Adult3: Inventory[].adult_3
+  Child3: Inventory[].child_3 
