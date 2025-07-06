@@ -8,6 +8,7 @@ import Schemas from './pages/Schemas';
 import PMSRegistration from './pages/PMSRegistration';
 import PMSIntegrationWizard from './pages/PMSWizard';
 import TestHarness from './pages/TestHarness';
+import Tests from './pages/Tests';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/schemas" element={<Schemas />} />
             <Route path="/pms-registration" element={<PMSRegistration />} />
             <Route path="/test-harness" element={<TestHarness />} />
+            <Route path="/tests" element={<Tests />} />
           </Routes>
         </main>
       </div>

@@ -28,7 +28,7 @@ git push -u origin main
 set PYTHONHOME=
 set PYTHONPATH=
 python -m venv env312
-venv\\Scripts\\activate 
+env312\\Scripts\\activate 
 pip install fastapi uvicorn pydantic pytest
 pip freeze > requirements.txt
 
@@ -125,6 +125,9 @@ then create its translator in code as mentioned earlier
 
 you may ask for any custom mapping conversion and incorporate
 
+add testing in ui
+add user teams option in ui
+deploy to dev server
 
 
 
