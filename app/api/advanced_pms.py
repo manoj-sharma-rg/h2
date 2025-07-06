@@ -24,7 +24,8 @@ async def list_pms() -> List[Dict[str, Any]]:
 async def register_pms(
     code: str = Form(...),
     name: str = Form(...),
-    description: str = Form("")
+    description: str = Form(""),
+    combined_avail_rate: bool = Form(False)
 ) -> Dict[str, Any]:
     """Register a new PMS"""
     if code in PMS_REGISTRY:
@@ -33,22 +34,25 @@ async def register_pms(
         "code": code,
         "name": name,
         "status": "active",
-        "description": description
+        "description": description,
+        "combined_avail_rate": combined_avail_rate
     }
-    return {"message": f"PMS '{code}' registered", "code": code, "name": name, "description": description}
+    return {"message": f"PMS '{code}' registered", "code": code, "name": name, "description": description, "combined_avail_rate": combined_avail_rate}
 
 @router.put("/pms/{pms_code}")
 async def update_pms(
     pms_code: str,
     name: str = Form(...),
-    description: str = Form("")
+    description: str = Form(""),
+    combined_avail_rate: bool = Form(False)
 ) -> Dict[str, Any]:
     """Update PMS name and description"""
     if pms_code not in PMS_REGISTRY:
         raise HTTPException(status_code=404, detail="PMS not found")
     PMS_REGISTRY[pms_code]["name"] = name
     PMS_REGISTRY[pms_code]["description"] = description
-    return {"message": f"PMS '{pms_code}' updated", "code": pms_code, "name": name, "description": description}
+    PMS_REGISTRY[pms_code]["combined_avail_rate"] = combined_avail_rate
+    return {"message": f"PMS '{pms_code}' updated", "code": pms_code, "name": name, "description": description, "combined_avail_rate": combined_avail_rate}
 
 @router.delete("/pms/{pms_code}")
 async def delete_pms(pms_code: str) -> Dict[str, Any]:
@@ -166,6 +170,20 @@ async def register_translator(pms_code: str, file: UploadFile = File(...)) -> Di
 async def test_translation(pms_code: str, request: Request) -> Dict[str, Any]:
     """Test translation with sample PMS message, return RGBridge XML and validation result"""
     data = await request.json()
-    # TODO: Use actual translation logic
-    # For now, just echo
-    return {"translated": data, "xml": "<xml>...</xml>", "valid": True} 
+    pms_config = PMS_REGISTRY.get(pms_code, {"combined_avail_rate": False})
+
+    if pms_config.get("combined_avail_rate"):
+        # Stub: split message into availability and rate
+        avail_data = data.get("availability", {})
+        rate_data = data.get("rate", {})
+        # Stub: translate to RGBridge XML
+        xml_avail = f"<xml><availability>{avail_data}</availability></xml>"
+        xml_rate = f"<xml><rate>{rate_data}</rate></xml>"
+        # Stub: validate XML (always True)
+        return {
+            "availability": {"translated": avail_data, "xml": xml_avail, "valid": True},
+            "rate": {"translated": rate_data, "xml": xml_rate, "valid": True}
+        }
+    else:
+        # Normal processing
+        return {"translated": data, "xml": "<xml>...</xml>", "valid": True} 
