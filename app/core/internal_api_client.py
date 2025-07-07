@@ -18,7 +18,7 @@ def post_xml_to_internal_api(xml_string: str, message_type: str) -> httpx.Respon
     """
     Post XML to the internal API endpoint with retries
     """
-    url = settings.INTERNAL_API_URL.rstrip("/") + f"/{message_type}"
+    url = settings.INTERNAL_API_URL.rstrip("/") #+ f"/{message_type}"
     headers = {
         "Content-Type": "application/xml"
     }
