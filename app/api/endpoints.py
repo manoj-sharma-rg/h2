@@ -44,6 +44,7 @@ async def verify_api_key(
     Raises:
         HTTPException: If authentication fails
     """
+    logger.info(f"called verify_api_key")
     # Check if API keys are configured
     if not settings.API_KEYS:
         logger.warning("No API keys configured, skipping authentication")
@@ -127,13 +128,14 @@ async def pms_post_endpoint(
         logger.error(f"No translator registered for PMS: {pms_code}")
         raise HTTPException(status_code=404, detail=f"No translator registered for PMS: {pms_code}")
     translator = translator_class(pms_code)
-
+    logger.info(f"translator: {translator}")
     # Parse JSON body
     try:
         payload = await request.json()
     except Exception as e:
         logger.error(f"Invalid JSON payload: {e}")
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    logger.info(f"payload: {payload}")
 
     # Determine message type
     try:
@@ -141,11 +143,13 @@ async def pms_post_endpoint(
     except ValueError:
         logger.error(f"Invalid message_type: {message_type}")
         raise HTTPException(status_code=400, detail="Invalid message_type. Use 'availability' or 'rate'.")
+    logger.info(f"msg_type: {msg_type}")
 
     # Validate message
     if not translator.validate_message(payload, msg_type):
         logger.error(f"Validation failed for PMS: {pms_code}, message_type: {message_type}")
         raise HTTPException(status_code=400, detail="Message validation failed.")
+    logger.info(f"Validation passed for PMS: {pms_code}, message_type: {message_type}")
 
     # Translate and build XML
     try:
@@ -164,16 +168,19 @@ async def pms_post_endpoint(
     except Exception as e:
         logger.error(f"Translation/XML build error: {e}")
         raise HTTPException(status_code=500, detail=f"Translation/XML build error: {e}")
+    logger.info(f"xml_string: {xml_string}")
 
     # Validate XML against XSD
     xsd_error = validate_xml_with_xsd(xml_string, xsd_path)
     if xsd_error:
         logger.error(f"XML validation error: {xsd_error}")
         raise HTTPException(status_code=500, detail=f"XML validation error: {xsd_error}")
+    logger.info(f"XML validation passed for PMS: {pms_code}, message_type: {message_type}, starting post to internal API")
 
-    # Post to internal API
+    # Forward Authorization header if present
+    auth_header = request.headers.get("authorization")
     try:
-        internal_response = post_xml_to_internal_api(xml_string, message_type)
+        internal_response = post_xml_to_internal_api(xml_string, message_type, auth_header=auth_header)
     except Exception as e:
         logger.error(f"Failed to post to internal API: {e}")
         raise HTTPException(status_code=502, detail=f"Failed to post to internal API: {e}")

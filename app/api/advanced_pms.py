@@ -6,8 +6,12 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request, B
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any
 import os
+from app.core.logging import get_logger
 
 router = APIRouter(prefix="/api/v1")
+
+# Logger for this module
+logger = get_logger("advanced_pms")
 
 # Add this at the top, after imports
 PMS_REGISTRY = {
@@ -18,6 +22,7 @@ PMS_REGISTRY = {
 @router.get("/pms")
 async def list_pms() -> List[Dict[str, Any]]:
     """List all PMS codes and their status"""
+    logger.info(f"called list_pms")
     return list(PMS_REGISTRY.values())
 
 @router.post("/pms")
@@ -37,6 +42,7 @@ async def register_pms(
         "description": description,
         "combined_avail_rate": combined_avail_rate
     }
+    logger.info(f"PMS '{code}' registered")
     return {"message": f"PMS '{code}' registered", "code": code, "name": name, "description": description, "combined_avail_rate": combined_avail_rate}
 
 @router.put("/pms/{pms_code}")
@@ -47,6 +53,7 @@ async def update_pms(
     combined_avail_rate: bool = Form(False)
 ) -> Dict[str, Any]:
     """Update PMS name and description"""
+    logger.info(f"called update_pms put")
     if pms_code not in PMS_REGISTRY:
         raise HTTPException(status_code=404, detail="PMS not found")
     PMS_REGISTRY[pms_code]["name"] = name
@@ -57,6 +64,7 @@ async def update_pms(
 @router.delete("/pms/{pms_code}")
 async def delete_pms(pms_code: str) -> Dict[str, Any]:
     """Remove a PMS"""
+    logger.info(f"called delete_pms")
     if pms_code not in PMS_REGISTRY:
         raise HTTPException(status_code=404, detail="PMS not found")
     del PMS_REGISTRY[pms_code]
@@ -66,37 +74,46 @@ async def delete_pms(pms_code: str) -> Dict[str, Any]:
 @router.get("/mappings/{pms_code}")
 async def get_mapping(pms_code: str) -> Any:
     """Get mapping file for a PMS"""
+    logger.info(f"called get_mapping")
     mapping_path = os.path.join("pms", pms_code, "mapping.yaml")
     if not os.path.exists(mapping_path):
+        logger.warning(f"Mapping not found for PMS: {pms_code}")
         raise HTTPException(status_code=404, detail="Mapping not found")
     with open(mapping_path, "r", encoding="utf-8") as f:
+        logger.info(f"Fetched mapping for PMS: {pms_code}")
         return JSONResponse(content={"mapping": f.read()})
 
 @router.post("/mappings/{pms_code}")
 async def upload_mapping(pms_code: str, file: UploadFile = File(...)) -> Dict[str, Any]:
     """Upload or update mapping file"""
+    logger.info(f"called upload_mapping")
     pms_dir = os.path.join("pms", pms_code)
     os.makedirs(pms_dir, exist_ok=True)
     mapping_path = os.path.join(pms_dir, "mapping.yaml")
     content = await file.read()
     with open(mapping_path, "wb") as f:
         f.write(content)
+    logger.info(f"Uploaded mapping for PMS: {pms_code}")
     return {"message": f"Mapping for '{pms_code}' uploaded"}
 
 @router.post("/mappings/{pms_code}/validate")
 async def validate_mapping(pms_code: str, request: Request) -> Dict[str, Any]:
     """Validate mapping file"""
+    logger.info(f"called validate_mapping")
     data = await request.body()
     import yaml
     try:
         yaml.safe_load(data)
+        logger.info(f"Validated mapping for PMS: {pms_code}")
         return {"valid": True}
     except Exception as e:
+        logger.error(f"Validation failed for PMS: {pms_code}: {e}")
         return {"valid": False, "error": str(e)}
 
 @router.get("/mappings")
 async def list_mappings() -> Any:
     """List all mapping files (without .yaml extension)"""
+    logger.info(f"called list_mappings")
     pms_root = "pms"
     mapping_codes = []
     if os.path.isdir(pms_root):
@@ -104,21 +121,26 @@ async def list_mappings() -> Any:
             mapping_path = os.path.join(pms_root, pms_code, "mapping.yaml")
             if os.path.isfile(mapping_path):
                 mapping_codes.append(pms_code)
+    logger.info(f"Listed all PMS mappings: {mapping_codes}")
     return {"mappings": mapping_codes}
 
 @router.delete("/mappings/{pms_code}")
 async def delete_mapping(pms_code: str) -> dict:
     """Delete a mapping file for a PMS"""
+    logger.info(f"called delete_mapping")
     mapping_path = os.path.join("pms", pms_code, "mapping.yaml")
     if not os.path.exists(mapping_path):
+        logger.warning(f"Mapping not found for PMS (delete): {pms_code}")
         raise HTTPException(status_code=404, detail="Mapping not found")
     os.remove(mapping_path)
+    logger.info(f"Deleted mapping for PMS: {pms_code}")
     return {"message": f"Mapping for '{pms_code}' deleted"}
 
 # --- Schema Management ---
 @router.post("/schemas/{pms_code}")
 async def upload_schema(pms_code: str, file: UploadFile = File(...)) -> Dict[str, Any]:
     """Upload PMS schema (JSON Schema/XSD)"""
+    logger.info(f"called upload_schema")
     schema_path = os.path.join("schemas", f"{pms_code}_{file.filename}")
     content = await file.read()
     with open(schema_path, "wb") as f:
@@ -128,6 +150,7 @@ async def upload_schema(pms_code: str, file: UploadFile = File(...)) -> Dict[str
 @router.get("/schemas/{pms_code}")
 async def get_schema(pms_code: str) -> Any:
     """Get PMS schema file"""
+    logger.info(f"called get_schema")
     # TODO: List all schemas for this PMS
     schema_dir = "schemas"
     files = [f for f in os.listdir(schema_dir) if f.startswith(f"{pms_code}_")]
@@ -140,6 +163,7 @@ async def get_schema(pms_code: str) -> Any:
 @router.get("/schemas")
 async def list_schemas() -> dict:
     """List all schema files in the schemas directory"""
+    logger.info(f"called list_schemas")
     schema_dir = "schemas"
     files = [f for f in os.listdir(schema_dir) if os.path.isfile(os.path.join(schema_dir, f))]
     return {"schemas": files}
@@ -147,6 +171,7 @@ async def list_schemas() -> dict:
 @router.delete("/schemas/{filename}")
 async def delete_schema(filename: str) -> dict:
     """Delete a schema file by filename"""
+    logger.info(f"called delete_schema")
     schema_path = os.path.join("schemas", filename)
     if not os.path.exists(schema_path):
         raise HTTPException(status_code=404, detail="Schema not found")
@@ -157,6 +182,7 @@ async def delete_schema(filename: str) -> dict:
 @router.get("/translators")
 async def list_translators() -> List[Dict[str, Any]]:
     """List all registered translators"""
+    logger.info(f"called list_translators")
     # TODO: List from plugin registry
     return [
         {"pms_code": "cloudbeds", "class": "CloudbedsPMSTranslator", "status": "active"},
@@ -166,6 +192,7 @@ async def list_translators() -> List[Dict[str, Any]]:
 @router.post("/translators/{pms_code}")
 async def register_translator(pms_code: str, file: UploadFile = File(...)) -> Dict[str, Any]:
     """Register/upload new translator code (dynamic plugin loading)"""
+    logger.info(f"called register_translator")
     # TODO: Save and dynamically load plugin code (advanced, security risk!)
     return {"message": f"Translator for '{pms_code}' uploaded (not yet active)"}
 
@@ -173,6 +200,7 @@ async def register_translator(pms_code: str, file: UploadFile = File(...)) -> Di
 @router.post("/translate/{pms_code}")
 async def test_translation(pms_code: str, request: Request) -> Dict[str, Any]:
     """Test translation with sample PMS message, return RGBridge XML and validation result"""
+    logger.info(f"called test_translation")
     data = await request.json()
     pms_config = PMS_REGISTRY.get(pms_code, {"combined_avail_rate": False})
 

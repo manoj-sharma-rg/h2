@@ -75,7 +75,7 @@ def build_avail_notif_xml(
             rs_attrs = {k: str(v) for k, v in rs.items() if v is not None}
             etree.SubElement(avail_status_msg_el, "RestrictionStatus", **rs_attrs)
 
-    return etree.tostring(root, pretty_print=True, encoding="utf-8", xml_declaration=True).decode("utf-8")
+    return etree.tostring(root, pretty_print=True, encoding="utf-8", xml_declaration=False).decode("utf-8")
 
 
 def build_rate_amount_notif_xml(
@@ -146,4 +146,4 @@ def build_rate_amount_notif_xml(
         if msg.get("MealsIncluded"):
             etree.SubElement(rate_el, "MealsIncluded", **{k: str(v) for k, v in msg["MealsIncluded"].items() if v is not None})
 
-    return etree.tostring(root, pretty_print=True, encoding="utf-8", xml_declaration=True).decode("utf-8") 
+    return etree.tostring(root, pretty_print=True, encoding="utf-8", xml_declaration=False).decode("utf-8") 
