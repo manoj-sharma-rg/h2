@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.opentravel.org/OTA/2003/05"
+           xmlns="http://www.opentravel.org/OTA/2003/05"
+           elementFormDefault="qualified">
+
+  <xs:element name="OTA_HotelAvailNotifRQ">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="AvailStatusMessages">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="AvailStatusMessage" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="StatusApplicationControl" minOccurs="0">
+                      <xs:complexType>
+                        <xs:attribute name="Start" type="xs:date" use="required"/>
+                        <xs:attribute name="End" type="xs:date" use="required"/>
+                        <xs:attribute name="InvCode" type="xs:string" use="required"/>
+                        <xs:attribute name="RatePlanCode" type="xs:string" use="required"/>
+                        <xs:attribute name="Mon" type="xs:boolean"/>
+                        <xs:attribute name="Tue" type="xs:boolean"/>
+                        <xs:attribute name="Weds" type="xs:boolean"/>
+                        <xs:attribute name="Thur" type="xs:boolean"/>
+                        <xs:attribute name="Fri" type="xs:boolean"/>
+                        <xs:attribute name="Sat" type="xs:boolean"/>
+                        <xs:attribute name="Sun" type="xs:boolean"/>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="LengthsOfStay" minOccurs="0">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="LengthOfStay" maxOccurs="unbounded">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="LOS_Pattern" minOccurs="0">
+                                  <xs:complexType>
+                                    <xs:attribute name="FullPatternLOS" type="xs:string"/>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:sequence>
+                              <xs:attribute name="MinMaxMessageType" type="xs:string"/>
+                              <xs:attribute name="TimeUnit" type="xs:string"/>
+                              <xs:attribute name="Time" type="xs:string"/>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="RestrictionStatus" minOccurs="0">
+                      <xs:complexType>
+                        <xs:attribute name="Status" type="xs:string"/>
+                        <xs:attribute name="MinAdvancedBookingOffset" type="xs:integer"/>
+                        <xs:attribute name="MaxAdvancedBookingOffset" type="xs:integer"/>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="BookingLimitMessageType" type="xs:string"/>
+                  <xs:attribute name="BookingLimit" type="xs:integer"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="HotelCode" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="TimeStamp" type="xs:dateTime" use="required"/>
+      <xs:attribute name="Target" type="xs:string"/>
+      <xs:attribute name="Version" type="xs:string"/>
+      <xs:attribute name="EchoToken" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema> 

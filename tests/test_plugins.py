@@ -111,7 +111,7 @@ class TestBasePMSTranslator:
         """Test mapping file path generation"""
         translator = MockTranslator("test_pms")
         mapping_file = translator.get_mapping_file()
-        assert mapping_file == "mappings/test_pms.yaml"
+        assert mapping_file == "pms/test_pms/mapping.yaml"
     
     def test_log_translation_success(self):
         """Test logging successful translation"""

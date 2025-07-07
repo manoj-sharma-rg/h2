@@ -6,6 +6,7 @@ import logging
 import sys
 from typing import Optional
 from app.core.config import settings
+import os
 
 
 def setup_logging(
@@ -22,15 +23,19 @@ def setup_logging(
     # Use settings if not provided
     log_level = log_level or settings.LOG_LEVEL
     log_format = log_format or settings.LOG_FORMAT
-    
+
+    # Detect if running in AWS Lambda
+    is_lambda = 'AWS_LAMBDA_FUNCTION_NAME' in os.environ
+
+    handlers = [logging.StreamHandler(sys.stdout)]
+    if not is_lambda:
+        handlers.append(logging.FileHandler("app.log"))
+
     # Configure root logger
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
         format=log_format,
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler("app.log")
-        ]
+        handlers=handlers
     )
     
     # Set specific loggers
