@@ -14,7 +14,7 @@ logger = logging.getLogger("rgbridge.internal_api")
     wait=wait_fixed(settings.INTERNAL_API_RETRY_DELAY),
     retry=retry_if_exception_type(httpx.RequestError)
 )
-def post_xml_to_internal_api(xml_string: str, message_type: str) -> httpx.Response:
+def post_xml_to_internal_api(xml_string: str, message_type: str, auth_header: str = None) -> httpx.Response:
     """
     Post XML to the internal API endpoint with retries
     """
@@ -22,6 +22,8 @@ def post_xml_to_internal_api(xml_string: str, message_type: str) -> httpx.Respon
     headers = {
         "Content-Type": "application/xml"
     }
+    if auth_header:
+        headers["Authorization"] = auth_header
     logger.info(f"Posting XML to internal API: {url}")
     try:
         with httpx.Client(timeout=settings.INTERNAL_API_TIMEOUT) as client:

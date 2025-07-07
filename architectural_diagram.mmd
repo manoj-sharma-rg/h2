@@ -1,0 +1,45 @@
+flowchart TD
+    UI["PMS Integration Platform UI (React)"]
+    API["API Endpoints (FastAPI)"]
+    Auth["Authentication & Logging"]
+    Wizard["PMS Wizard & Mapping Mgmt"]
+    Plugins["PMS Plugin System (Translators)"]
+    Mapping["Mapping Loader & Validator (YAML)"]
+    Utils["Utilities (Date, Currency, LOS, Boolean)"]
+    XMLBuilder["RGBridge XML Builder"]
+    XSD["XSD Validator"]
+    InternalAPIClient["Internal API Client (httpx)"]
+    InternalAPI["Internal RGBridge API"]
+    MappingsDir[("mappings/")]
+    SchemasDir[("schemas/")]
+    PluginsDir[("pms/")]
+    AppLog[("app.log")]
+
+    UI-->|REST/JSON|API
+    API-->|Auth, Logging|Auth
+    API-->|Wizard, Mapping, Test, Registration|Wizard
+    API-->|PMS Message|Plugins
+    Plugins-->|Uses|Mapping
+    Plugins-->|Uses|Utils
+    Plugins-->|Builds|XMLBuilder
+    XMLBuilder-->|Validates|XSD
+    XMLBuilder-->|Produces|API
+    API-->|POST XML|InternalAPIClient
+    InternalAPIClient-->|HTTP/XML|InternalAPI
+    Mapping-->|YAML Files|MappingsDir
+    XSD-->|XSD Files|SchemasDir
+    Plugins-->|Auto-discovery|PluginsDir
+    UI-->|Uploads/Views|MappingsDir
+    UI-->|Views|SchemasDir
+    UI-->|Test/Monitor|API
+    API-->|Returns|UI
+    InternalAPI-->|Response|API
+    API-->|Logs|AppLog
+    Auth-->|Logs|AppLog
+    Wizard-->|Logs|AppLog
+    Plugins-->|Logs|AppLog
+    InternalAPIClient-->|Logs|AppLog
+    XMLBuilder-->|Logs|AppLog
+    XSD-->|Logs|AppLog
+    Mapping-->|Logs|AppLog
+    Utils-->|Logs|AppLog 

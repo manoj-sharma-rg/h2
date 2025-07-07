@@ -84,6 +84,25 @@ function getFieldDescription(field: string) {
   return descs[field] || '';
 }
 
+// AI mapping suggestion function (to be implemented with backend integration)
+async function getAIMappingSuggestion({
+  field,
+  sampleMessage,
+  rgbridgeFields,
+  type
+}: {
+  field: string;
+  sampleMessage: string;
+  rgbridgeFields: string[];
+  type: 'availability' | 'rate';
+}): Promise<string | null> {
+  // TODO: Call backend AI mapping suggestion endpoint
+  // Example:
+  // const response = await fetch(`${API_BASE}/wizard/suggest-mapping`, { ... })
+  // return (await response.json()).suggestion;
+  return null;
+}
+
 const PMSIntegrationWizard = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [wizardData, setWizardData] = useState<PMSWizardData>({
@@ -111,6 +130,8 @@ const PMSIntegrationWizard = () => {
   const [mappingDialogType, setMappingDialogType] = useState<'availability' | 'rate'>('availability');
   const [mappingDialogFieldObj, setMappingDialogFieldObj] = useState<{ value: string, label: string } | null>(null);
   const [mappingDialogConversion, setMappingDialogConversion] = useState('');
+  const [aiSuggestion, setAISuggestion] = useState<string | null>(null);
+  const [aiLoading, setAILoading] = useState(false);
 
   const steps = [
     'PMS Information',
@@ -209,6 +230,7 @@ const PMSIntegrationWizard = () => {
   const openMappingDialog = (field: string) => {
     setCurrentMappingField(field);
     setCurrentMappingValue('');
+    setAISuggestion(null);
     setMappingDialogOpen(true);
   };
 
@@ -241,6 +263,24 @@ const PMSIntegrationWizard = () => {
       setMappingDialogType('availability');
       setMappingDialogFieldObj(null);
       setMappingDialogConversion('');
+    }
+  };
+
+  const handleAISuggest = async () => {
+    setAILoading(true);
+    setAISuggestion(null);
+    try {
+      const suggestion = await getAIMappingSuggestion({
+        field: currentMappingField,
+        sampleMessage: mappingDialogType === 'availability' ? wizardData.sampleAvailabilityMessage : wizardData.sampleRateMessage,
+        rgbridgeFields: mappingDialogType === 'availability' ? availFields.map(f => f.value) : rateFields.map(f => f.value),
+        type: mappingDialogType
+      });
+      setAISuggestion(suggestion);
+    } catch (e) {
+      setAISuggestion('No suggestion found.');
+    } finally {
+      setAILoading(false);
     }
   };
 

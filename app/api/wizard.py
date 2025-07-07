@@ -8,6 +8,12 @@ import json
 import yaml
 import re
 from datetime import datetime
+import os
+try:
+    import openai
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
 
 router = APIRouter(prefix="/api/v1/wizard")
 
@@ -399,4 +405,50 @@ def generate_mapping_yaml(
         }
     }
     
-    return yaml.dump(mapping_data, default_flow_style=False, sort_keys=False) 
+    return yaml.dump(mapping_data, default_flow_style=False, sort_keys=False)
+
+@router.post("/suggest-mapping")
+async def suggest_mapping(request: Dict[str, Any]) -> Dict[str, Any]:
+    """Suggest a mapping for a PMS field using AI (OpenAI GPT) or fallback heuristic"""
+    field = request.get('field')
+    sample_message = request.get('sample_message')
+    rgbridge_fields = request.get('rgbridge_fields', [])
+    type_ = request.get('type', 'availability')
+    if not field or not sample_message or not rgbridge_fields:
+        raise HTTPException(status_code=400, detail="Missing required parameters")
+
+    # Try OpenAI if available
+    if OPENAI_AVAILABLE and os.getenv('OPENAI_API_KEY'):
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+        prompt = f"""
+You are an expert in hotel PMS integrations. Given the following PMS message sample and a list of possible RGBridge fields, suggest the best mapping for the PMS field '{field}'.
+
+Sample message:
+{sample_message}
+
+Possible RGBridge fields: {', '.join(rgbridge_fields)}
+
+Return only the best matching RGBridge field name, or 'NONE' if no good match exists.
+"""
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "system", "content": "You are a helpful assistant for PMS mapping."},
+                          {"role": "user", "content": prompt}],
+                max_tokens=20,
+                temperature=0.0
+            )
+            suggestion = response.choices[0].message['content'].strip()
+            if suggestion.upper() == 'NONE':
+                suggestion = None
+            return {"suggestion": suggestion}
+        except Exception as e:
+            pass  # fallback to heuristic
+
+    # Fallback: simple heuristic (partial match)
+    suggestion = None
+    for rgf in rgbridge_fields:
+        if field.lower() in rgf.lower() or rgf.lower() in field.lower():
+            suggestion = rgf
+            break
+    return {"suggestion": suggestion} 

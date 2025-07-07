@@ -177,9 +177,10 @@ async def pms_post_endpoint(
         raise HTTPException(status_code=500, detail=f"XML validation error: {xsd_error}")
     logger.info(f"XML validation passed for PMS: {pms_code}, message_type: {message_type}, starting post to internal API")
 
-    # Post to internal API
+    # Forward Authorization header if present
+    auth_header = request.headers.get("authorization")
     try:
-        internal_response = post_xml_to_internal_api(xml_string, message_type)
+        internal_response = post_xml_to_internal_api(xml_string, message_type, auth_header=auth_header)
     except Exception as e:
         logger.error(f"Failed to post to internal API: {e}")
         raise HTTPException(status_code=502, detail=f"Failed to post to internal API: {e}")
