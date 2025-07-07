@@ -84,7 +84,7 @@ function getFieldDescription(field: string) {
   return descs[field] || '';
 }
 
-// AI mapping suggestion function (to be implemented with backend integration)
+// AI mapping suggestion function with backend integration
 async function getAIMappingSuggestion({
   field,
   sampleMessage,
@@ -95,12 +95,24 @@ async function getAIMappingSuggestion({
   sampleMessage: string;
   rgbridgeFields: string[];
   type: 'availability' | 'rate';
-}): Promise<string | null> {
-  // TODO: Call backend AI mapping suggestion endpoint
-  // Example:
-  // const response = await fetch(`${API_BASE}/wizard/suggest-mapping`, { ... })
-  // return (await response.json()).suggestion;
-  return null;
+}): Promise<{ suggestion: string | null, method: string | null }> {
+  try {
+    const response = await fetch(`${API_BASE}/wizard/suggest-mapping`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        field,
+        sample_message: sampleMessage,
+        rgbridge_fields: rgbridgeFields,
+        type
+      })
+    });
+    if (!response.ok) throw new Error('Failed to get mapping suggestion');
+    const data = await response.json();
+    return { suggestion: data.suggestion, method: data.method };
+  } catch (e) {
+    return { suggestion: null, method: null };
+  }
 }
 
 const PMSIntegrationWizard = () => {
@@ -130,7 +142,7 @@ const PMSIntegrationWizard = () => {
   const [mappingDialogType, setMappingDialogType] = useState<'availability' | 'rate'>('availability');
   const [mappingDialogFieldObj, setMappingDialogFieldObj] = useState<{ value: string, label: string } | null>(null);
   const [mappingDialogConversion, setMappingDialogConversion] = useState('');
-  const [aiSuggestion, setAISuggestion] = useState<string | null>(null);
+  const [aiSuggestion, setAISuggestion] = useState<{ suggestion: string | null, method: string | null }>({ suggestion: null, method: null });
   const [aiLoading, setAILoading] = useState(false);
 
   const steps = [
@@ -230,7 +242,7 @@ const PMSIntegrationWizard = () => {
   const openMappingDialog = (field: string) => {
     setCurrentMappingField(field);
     setCurrentMappingValue('');
-    setAISuggestion(null);
+    setAISuggestion({ suggestion: null, method: null });
     setMappingDialogOpen(true);
   };
 
@@ -268,17 +280,17 @@ const PMSIntegrationWizard = () => {
 
   const handleAISuggest = async () => {
     setAILoading(true);
-    setAISuggestion(null);
+    setAISuggestion({ suggestion: null, method: null });
     try {
-      const suggestion = await getAIMappingSuggestion({
+      const result = await getAIMappingSuggestion({
         field: currentMappingField,
         sampleMessage: mappingDialogType === 'availability' ? wizardData.sampleAvailabilityMessage : wizardData.sampleRateMessage,
         rgbridgeFields: mappingDialogType === 'availability' ? availFields.map(f => f.value) : rateFields.map(f => f.value),
         type: mappingDialogType
       });
-      setAISuggestion(suggestion);
+      setAISuggestion(result);
     } catch (e) {
-      setAISuggestion('No suggestion found.');
+      setAISuggestion({ suggestion: 'No suggestion found.', method: null });
     } finally {
       setAILoading(false);
     }
@@ -324,7 +336,7 @@ const PMSIntegrationWizard = () => {
   const handleFinish = async () => {
     setLoading(true);
     setError(null);
-    
+    setSuccess(null);
     try {
       // Register PMS
       const pmsResponse = await fetch(`${API_BASE}/pms`, {
@@ -337,25 +349,31 @@ const PMSIntegrationWizard = () => {
           combined_avail_rate: String(!!wizardData.combinedAvailRate)
         })
       });
-
       if (!pmsResponse.ok) throw new Error('Failed to register PMS');
 
       // Upload mapping
       const mappingBlob = new Blob([wizardData.mappingYaml], { type: 'application/x-yaml' });
       const mappingFile = new File([mappingBlob], `${wizardData.pmsCode}.yaml`, { type: 'application/x-yaml' });
-      
       const mappingFormData = new FormData();
       mappingFormData.append('file', mappingFile);
-      
       const mappingResponse = await fetch(`${API_BASE}/mappings/${wizardData.pmsCode}`, {
         method: 'POST',
         body: mappingFormData
       });
-
       if (!mappingResponse.ok) throw new Error('Failed to upload mapping');
 
-      setSuccess('PMS integration completed successfully!');
-      
+      // Upload translator
+      const translatorBlob = new Blob([wizardData.translatorCode], { type: 'text/x-python' });
+      const translatorFile = new File([translatorBlob], `${wizardData.pmsCode}_translator.py`, { type: 'text/x-python' });
+      const translatorFormData = new FormData();
+      translatorFormData.append('file', translatorFile);
+      const translatorResponse = await fetch(`${API_BASE}/translators/${wizardData.pmsCode}`, {
+        method: 'POST',
+        body: translatorFormData
+      });
+      if (!translatorResponse.ok) throw new Error('Failed to upload translator');
+
+      setSuccess('PMS integration completed successfully! Mapping and translator uploaded.');
     } catch (err: any) {
       setError(err.message || 'Integration failed');
     } finally {
@@ -784,6 +802,23 @@ const PMSIntegrationWizard = () => {
             renderInput={params => <TextField {...params} label="RGBridge Field" />}
             sx={{ mb: 2 }}
           />
+          <Button
+            variant="outlined"
+            onClick={handleAISuggest}
+            disabled={aiLoading}
+            sx={{ mb: 2 }}
+          >
+            {aiLoading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+            AI Suggest
+          </Button>
+          {aiSuggestion.suggestion && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Suggested mapping: <strong>{aiSuggestion.suggestion}</strong>
+              {aiSuggestion.method && (
+                <span> (Source: {aiSuggestion.method === 'ai' ? 'AI' : 'Heuristic'})</span>
+              )}
+            </Alert>
+          )}
           <Tooltip title={getFieldDescription(mappingDialogFieldObj?.value || '')}>
             <InfoIcon sx={{ mb: 2, ml: 1 }} />
           </Tooltip>
