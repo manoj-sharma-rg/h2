@@ -27,7 +27,12 @@ import {
   FormControlLabel,
   Radio,
   Tooltip,
-  ListSubheader
+  ListSubheader,
+  Container,
+  useMediaQuery,
+  useTheme,
+  AppBar,
+  Toolbar
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { ExpandMore, Code, Download } from '@mui/icons-material';
@@ -175,6 +180,9 @@ const PMSIntegrationWizard = () => {
     'Mapping Configuration',
     'Code Generation & Registration'
   ];
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handlePMSInfoChange = (field: keyof PMSWizardData, value: any) => {
     setWizardData(prev => ({ ...prev, [field]: value }));
@@ -809,57 +817,88 @@ const PMSIntegrationWizard = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', p: 3 }}>
-      {/* Show success or error message at the top */}
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      <Typography variant="h4" gutterBottom>
-        PMS Integration Wizard
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Automatically integrate a new PMS by analyzing message formats and generating translator code.
-      </Typography>
+    <Container maxWidth="md" sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', background: theme.palette.background.default, p: { xs: 0, sm: 2 } }}>
+      {/* AppBar/Header */}
+      <AppBar position="static" color="default" elevation={1} sx={{ mb: 4 }}>
+        <Toolbar sx={{ justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Optionally add a logo here */}
+            <Typography variant="h5" color="primary" fontWeight={700} sx={{ letterSpacing: 1 }}>
+              PMS Integration Wizard
+            </Typography>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-        {steps.map((label) => (
-          <Step key={label}>
+      {/* Stepper */}
+      <Stepper activeStep={activeStep} alternativeLabel sx={{ width: '100%', mb: 4 }}>
+        {steps.map((label, idx) => (
+          <Step key={label} completed={activeStep > idx}>
             <StepLabel>{label}</StepLabel>
           </Step>
         ))}
       </Stepper>
 
-      {renderStepContent(activeStep)}
+      {/* Main Card */}
+      <Paper elevation={3} sx={{ width: '100%', maxWidth: 700, mx: 'auto', p: { xs: 2, sm: 4 }, mb: 4, minHeight: 400, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
+        {/* Success/Error Alerts */}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-        <Button
-          disabled={activeStep === 0}
-          onClick={handleBack}
-        >
-          Back
-        </Button>
-        <Box>
-          <Button onClick={handleReset} sx={{ mr: 1 }}>
-            Reset
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleNext}
-            disabled={loading}
-          >
-            {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
-          </Button>
+        {/* Step Content */}
+        <Box sx={{ flexGrow: 1, width: '100%' }}>
+          {renderStepContent(activeStep)}
         </Box>
-      </Box>
 
-      <Dialog open={mappingDialogOpen} onClose={() => setMappingDialogOpen(false)}>
+        {/* Navigation Buttons - fixed at bottom of card */}
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          px: { xs: 2, sm: 4 },
+          py: 2,
+          background: 'rgba(255,255,255,0.95)',
+          borderTop: `1px solid ${theme.palette.divider}`,
+          zIndex: 2
+        }}>
+          <Button
+            disabled={activeStep === 0}
+            onClick={handleBack}
+            variant="outlined"
+            size={isMobile ? 'small' : 'medium'}
+          >
+            Back
+          </Button>
+          <Box>
+            <Button onClick={handleReset} sx={{ mr: 1 }} size={isMobile ? 'small' : 'medium'} color="secondary">
+              Reset
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              disabled={loading}
+              size={isMobile ? 'small' : 'medium'}
+            >
+              {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+            </Button>
+          </Box>
+        </Box>
+      </Paper>
+
+      {/* Mapping Dialog (unchanged) */}
+      <Dialog open={mappingDialogOpen} onClose={() => setMappingDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Add Mapping for "{currentMappingField}"</DialogTitle>
         <DialogContent>
           <RadioGroup
@@ -929,7 +968,7 @@ const PMSIntegrationWizard = () => {
           <Button onClick={handleAddAdvancedMapping} variant="contained">Add</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   );
 };
 
