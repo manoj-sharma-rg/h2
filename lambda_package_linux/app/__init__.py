@@ -1,1 +1,0 @@
-# RGBridge PMS Integration Platform 

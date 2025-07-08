@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Card, CardContent, Typography, List, ListItem, ListItemText, IconButton, TextField, Button, Alert, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogActions, Grid } from '@mui/material';
+import { Card, CardContent, Typography, TextField, Button, Alert, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogActions, Grid, IconButton } from '@mui/material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AddIcon from '@mui/icons-material/Add';
@@ -20,6 +21,7 @@ const Schemas = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [toDelete, setToDelete] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const uploadCodeRef = useRef<HTMLInputElement>(null);
   const uploadFileRef = useRef<HTMLInputElement>(null);
 
@@ -114,6 +116,30 @@ const Schemas = () => {
     }
   };
 
+  // DataGrid columns
+  const columns: GridColDef[] = [
+    { field: 'filename', headerName: 'Filename', flex: 1, sortable: true, filterable: true },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      sortable: false,
+      filterable: false,
+      renderCell: (params: any) => (
+        <IconButton color="error" onClick={() => handleDelete(params.row.filename)} disabled={deleting === params.row.filename}>
+          <DeleteIcon />
+        </IconButton>
+      ),
+      width: 100,
+      align: 'center',
+      headerAlign: 'center',
+    },
+  ];
+
+  // Filtered rows
+  const rows = schemas
+    .filter(filename => filename.toLowerCase().includes(search.toLowerCase()))
+    .map(filename => ({ id: filename, filename }));
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 400 }}>
       <Card elevation={3} sx={{ width: '100%', maxWidth: 800, mt: 2 }}>
@@ -126,6 +152,14 @@ const Schemas = () => {
               Upload New Schema
             </Button>
           </Box>
+          <TextField
+            label="Search Filename"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            size="small"
+            fullWidth
+            sx={{ mb: 2 }}
+          />
           {deleteError && <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert>}
           {deleteSuccess && <Alert severity="success" sx={{ mb: 2 }}>{deleteSuccess}</Alert>}
           {uploadError && <Alert severity="error" sx={{ mb: 2 }}>{uploadError}</Alert>}
@@ -137,23 +171,14 @@ const Schemas = () => {
           ) : error ? (
             <Alert severity="error">{error}</Alert>
           ) : (
-            <List>
-              {schemas.length === 0 && (
-                <ListItem>
-                  <ListItemText primary="No schemas found." />
-                </ListItem>
-              )}
-              {schemas.map(filename => (
-                <ListItem key={filename} alignItems="flex-start" sx={{ py: 1 }}>
-                  <ListItemText
-                    primary={<Typography variant="subtitle1" fontWeight={600}>{filename}</Typography>}
-                  />
-                  <IconButton color="error" onClick={() => handleDelete(filename)} disabled={deleting === filename}>
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItem>
-              ))}
-            </List>
+            <DataGrid
+              autoHeight
+              rows={rows}
+              columns={columns}
+              initialState={{ pagination: { pageSize: 10 } }}
+              disableSelectionOnClick
+              sx={{ background: '#fafbfc', borderRadius: 2, mb: 2 }}
+            />
           )}
 
           {/* Upload Schema Dialog */}

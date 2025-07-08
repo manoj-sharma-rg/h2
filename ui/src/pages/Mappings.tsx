@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Card, CardContent, Typography, List, ListItem, ListItemText, IconButton, TextField, Button, Alert, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Snackbar } from '@mui/material';
+import { Card, CardContent, Typography, TextField, Button, Alert, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Snackbar, IconButton } from '@mui/material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -31,6 +32,7 @@ const Mappings = () => {
   const [validationResult, setValidationResult] = useState<{valid: boolean, error?: string} | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [toDelete, setToDelete] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const uploadCodeRef = useRef<HTMLInputElement>(null);
   const uploadFileRef = useRef<HTMLInputElement>(null);
 
@@ -196,6 +198,35 @@ const Mappings = () => {
     }
   };
 
+  // DataGrid columns
+  const columns: GridColDef[] = [
+    { field: 'code', headerName: 'PMS Code', flex: 1, sortable: true, filterable: true },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      sortable: false,
+      filterable: false,
+      renderCell: (params: any) => (
+        <>
+          <IconButton color="primary" onClick={() => handleViewEdit(params.row.code)} sx={{ mr: 1 }}>
+            <EditIcon />
+          </IconButton>
+          <IconButton color="error" onClick={() => handleDelete(params.row.code)}>
+            <DeleteIcon />
+          </IconButton>
+        </>
+      ),
+      width: 120,
+      align: 'center',
+      headerAlign: 'center',
+    },
+  ];
+
+  // Filtered rows
+  const rows = mappings
+    .filter(code => code.toLowerCase().includes(search.toLowerCase()))
+    .map(code => ({ id: code, code }));
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 400 }}>
       <Card elevation={3} sx={{ width: '100%', maxWidth: 800, mt: 2 }}>
@@ -208,6 +239,14 @@ const Mappings = () => {
               Upload New Mapping
             </Button>
           </Box>
+          <TextField
+            label="Search PMS Code"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            size="small"
+            fullWidth
+            sx={{ mb: 2 }}
+          />
           {deleteError && <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert>}
           {deleteSuccess && <Alert severity="success" sx={{ mb: 2 }}>{deleteSuccess}</Alert>}
           {saveError && <Alert severity="error" sx={{ mb: 2 }}>{saveError}</Alert>}
@@ -221,26 +260,14 @@ const Mappings = () => {
           ) : error ? (
             <Alert severity="error">{error}</Alert>
           ) : (
-            <List>
-              {mappings.length === 0 && (
-                <ListItem>
-                  <ListItemText primary="No mappings found." />
-                </ListItem>
-              )}
-              {mappings.map(code => (
-                <ListItem key={code} alignItems="flex-start" sx={{ py: 1 }}>
-                  <ListItemText
-                    primary={<Typography variant="subtitle1" fontWeight={600}>{code}</Typography>}
-                  />
-                  <IconButton color="primary" onClick={() => handleViewEdit(code)} sx={{ mr: 1 }}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton color="error" onClick={() => handleDelete(code)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItem>
-              ))}
-            </List>
+            <DataGrid
+              autoHeight
+              rows={rows}
+              columns={columns}
+              initialState={{ pagination: { pageSize: 10 } }}
+              disableSelectionOnClick
+              sx={{ background: '#fafbfc', borderRadius: 2, mb: 2 }}
+            />
           )}
 
           {/* Edit Mapping Dialog */}

@@ -1,1 +1,0 @@
-# Core module for RGBridge PMS Integration Platform 

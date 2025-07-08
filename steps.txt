@@ -1,9 +1,9 @@
-to run api
+to run api open a command window and run following
 env312\\Scripts\\activate 
 pip install -r requirements.txt
 uvicorn app.main:app --reload --reload-dir app --reload-dir tests
 
-to run ui app
+to run ui app open another command window and run following
 cd ui
 install node.js
 npm install 
@@ -146,4 +146,5 @@ rgbridge api call authentication
 handling unmapped fields
 rgbridge call single call for combined message
 third type of message handling
+follow gdpr and pci guideline
 
