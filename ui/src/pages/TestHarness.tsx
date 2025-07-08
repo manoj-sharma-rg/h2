@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Card, CardContent, Typography, Select, MenuItem, TextField, Button, Alert, CircularProgress, Box, Grid, FormControl, InputLabel } from '@mui/material';
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
@@ -70,112 +71,130 @@ const TestHarness = () => {
   };
 
   return (
-    <div>
-      <h1>Test Harness</h1>
-      <form onSubmit={handleSubmit} style={{ marginBottom: 24, padding: 16, border: '1px solid #ccc', borderRadius: 8, background: '#f6f8fa' }}>
-        <div style={{ marginBottom: 8 }}>
-          <label>PMS:
-            <select
-              value={selectedPMS}
-              onChange={e => setSelectedPMS(e.target.value)}
-              disabled={loadingPMS || submitting}
-              style={{ marginLeft: 8 }}
-            >
-              {pmsList.map((pms: any) => (
-                <option key={pms.code} value={pms.code}>{pms.name || pms.code}</option>
-              ))}
-            </select>
-            {selectedPMSConfig && selectedPMSConfig.combined_avail_rate && (
-              <span style={{ color: '#1976d2', marginLeft: 12 }}>[Combined Avail+Rate]</span>
-            )}
-          </label>
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>Message Type:
-            <select
-              value={messageType}
-              onChange={e => setMessageType(e.target.value)}
-              disabled={submitting}
-              style={{ marginLeft: 8 }}
-            >
-              <option value="availability">Availability</option>
-              <option value="rate">Rate</option>
-            </select>
-          </label>
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>Sample PMS Message:</label>
-          <textarea
-            ref={sampleRef}
-            value={sample}
-            onChange={e => setSample(e.target.value)}
-            rows={10}
-            style={{ width: '100%', fontFamily: 'monospace', fontSize: 14 }}
-            disabled={submitting}
-            placeholder="Paste JSON or XML PMS message here"
-          />
-        </div>
-        <button type="submit" disabled={submitting || !selectedPMS || !sample}>Submit</button>
-        {submitting && <span style={{ marginLeft: 12 }}>Submitting...</span>}
-        {submitError && <span style={{ color: 'red', marginLeft: 12 }}>{submitError}</span>}
-      </form>
-      {result && (
-        <div style={{ padding: 16, border: '1px solid #ccc', borderRadius: 8, background: '#fafbfc' }}>
-          <h2>Translation Result</h2>
-          {selectedPMSConfig && selectedPMSConfig.combined_avail_rate && result.availability && result.rate ? (
-            <>
-              <div style={{ marginBottom: 16 }}>
-                <b>Availability</b>
-                <div><b>Valid:</b> {String(result.availability.valid)}</div>
-                <div style={{ marginTop: 8 }}>
-                  <b>XML Output:</b>
-                  <pre style={{ background: '#222', color: '#fff', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{result.availability.xml}</pre>
-                </div>
-                {result.availability.translated && (
-                  <details style={{ marginTop: 8 }}>
-                    <summary>Raw Translation Output</summary>
-                    <pre style={{ background: '#eee', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{JSON.stringify(result.availability.translated, null, 2)}</pre>
-                  </details>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 400 }}>
+      <Card elevation={3} sx={{ width: '100%', maxWidth: 800, mt: 2 }}>
+        <CardContent>
+          <Typography variant="h5" color="primary" fontWeight={700} gutterBottom align="center">
+            Test Harness
+          </Typography>
+          {errorPMS && <Alert severity="error" sx={{ mb: 2 }}>{errorPMS}</Alert>}
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>PMS</InputLabel>
+                  <Select
+                    value={selectedPMS}
+                    label="PMS"
+                    onChange={e => setSelectedPMS(e.target.value)}
+                    disabled={loadingPMS || submitting}
+                  >
+                    {pmsList.map((pms: any) => (
+                      <MenuItem key={pms.code} value={pms.code}>
+                        {pms.name || pms.code}
+                        {pms.combined_avail_rate && ' [Combined Avail+Rate]'}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Message Type</InputLabel>
+                  <Select
+                    value={messageType}
+                    label="Message Type"
+                    onChange={e => setMessageType(e.target.value)}
+                    disabled={submitting}
+                  >
+                    <MenuItem value="availability">Availability</MenuItem>
+                    <MenuItem value="rate">Rate</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Sample PMS Message"
+                  value={sample}
+                  onChange={e => setSample(e.target.value)}
+                  multiline
+                  minRows={8}
+                  fullWidth
+                  inputRef={sampleRef}
+                  placeholder="Paste JSON or XML PMS message here"
+                  disabled={submitting}
+                  sx={{ fontFamily: 'monospace' }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={submitting || !selectedPMS || !sample}
+                  fullWidth
+                  sx={{ minHeight: 48, fontWeight: 500 }}
+                >
+                  {submitting ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+                  Submit
+                </Button>
+              </Grid>
+            </Grid>
+          </form>
+          {submitError && <Alert severity="error" sx={{ mt: 2 }}>{submitError}</Alert>}
+          {result && (
+            <Card elevation={2} sx={{ mt: 4, background: '#fafbfc' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Translation Result</Typography>
+                {selectedPMSConfig && selectedPMSConfig.combined_avail_rate && result.availability && result.rate ? (
+                  <>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle1" fontWeight={600}>Availability</Typography>
+                      <Typography variant="body2"><b>Valid:</b> {String(result.availability.valid)}</Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}><b>XML Output:</b></Typography>
+                      <Box component="pre" sx={{ background: '#222', color: '#fff', p: 2, borderRadius: 2, overflowX: 'auto', mt: 1 }}>{result.availability.xml}</Box>
+                      {result.availability.translated && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="body2" fontWeight={500}>Raw Translation Output</Typography>
+                          <Box component="pre" sx={{ background: '#eee', p: 2, borderRadius: 2, overflowX: 'auto' }}>{JSON.stringify(result.availability.translated, null, 2)}</Box>
+                        </Box>
+                      )}
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={600}>Rate</Typography>
+                      <Typography variant="body2"><b>Valid:</b> {String(result.rate.valid)}</Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}><b>XML Output:</b></Typography>
+                      <Box component="pre" sx={{ background: '#222', color: '#fff', p: 2, borderRadius: 2, overflowX: 'auto', mt: 1 }}>{result.rate.xml}</Box>
+                      {result.rate.translated && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="body2" fontWeight={500}>Raw Translation Output</Typography>
+                          <Box component="pre" sx={{ background: '#eee', p: 2, borderRadius: 2, overflowX: 'auto' }}>{JSON.stringify(result.rate.translated, null, 2)}</Box>
+                        </Box>
+                      )}
+                    </Box>
+                  </>
+                ) : (
+                  <>
+                    <Typography variant="body2"><b>Valid:</b> {String(result.valid)}</Typography>
+                    {result.error && (
+                      <Typography variant="body2" color="error"><b>Error:</b> {result.error}</Typography>
+                    )}
+                    <Typography variant="body2" sx={{ mt: 2 }}><b>XML Output:</b></Typography>
+                    <Box component="pre" sx={{ background: '#222', color: '#fff', p: 2, borderRadius: 2, overflowX: 'auto', mt: 1 }}>{result.xml}</Box>
+                    {result.translated && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="body2" fontWeight={500}>Raw Translation Output</Typography>
+                        <Box component="pre" sx={{ background: '#eee', p: 2, borderRadius: 2, overflowX: 'auto' }}>{JSON.stringify(result.translated, null, 2)}</Box>
+                      </Box>
+                    )}
+                  </>
                 )}
-              </div>
-              <div>
-                <b>Rate</b>
-                <div><b>Valid:</b> {String(result.rate.valid)}</div>
-                <div style={{ marginTop: 8 }}>
-                  <b>XML Output:</b>
-                  <pre style={{ background: '#222', color: '#fff', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{result.rate.xml}</pre>
-                </div>
-                {result.rate.translated && (
-                  <details style={{ marginTop: 8 }}>
-                    <summary>Raw Translation Output</summary>
-                    <pre style={{ background: '#eee', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{JSON.stringify(result.rate.translated, null, 2)}</pre>
-                  </details>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <b>Valid:</b> {String(result.valid)}
-              </div>
-              {result.error && (
-                <div style={{ color: 'red' }}><b>Error:</b> {result.error}</div>
-              )}
-              <div style={{ marginTop: 12 }}>
-                <b>XML Output:</b>
-                <pre style={{ background: '#222', color: '#fff', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{result.xml}</pre>
-              </div>
-              {result.translated && (
-                <details style={{ marginTop: 12 }}>
-                  <summary>Raw Translation Output</summary>
-                  <pre style={{ background: '#eee', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{JSON.stringify(result.translated, null, 2)}</pre>
-                </details>
-              )}
-            </>
+              </CardContent>
+            </Card>
           )}
-        </div>
-      )}
-    </div>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     # Database settings (for future use)
     DATABASE_URL: Optional[str] = Field(default=None, env="DATABASE_URL")
     
+    OPENAI_API_KEY: str | None = None 
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

@@ -441,7 +441,7 @@ Return only the best matching RGBridge field name, or 'NONE' if no good match ex
             suggestion = response.choices[0].message['content'].strip()
             if suggestion.upper() == 'NONE':
                 suggestion = None
-            return {"suggestion": suggestion}
+            return {"suggestion": suggestion, "method": "ai"}
         except Exception as e:
             pass  # fallback to heuristic
 
@@ -451,4 +451,4 @@ Return only the best matching RGBridge field name, or 'NONE' if no good match ex
         if field.lower() in rgf.lower() or rgf.lower() in field.lower():
             suggestion = rgf
             break
-    return {"suggestion": suggestion} 
+    return {"suggestion": suggestion, "method": "heuristic"} 

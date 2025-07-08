@@ -1,0 +1,93 @@
+<OTA_HotelARINotifRQ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" EchoToken="152507533029517R" Target="Production" TimeStamp="2025-06-30T07:42:26.2682393Z" Version="3.2" xmlns="http://www.opentravel.org/OTA/2003/05">
+  <RateAmountMessages HotelCode="MART1">
+    <RateAmountMessage>
+      <StatusApplicationControl InvCode="KING" RatePlanCode="HOP" End="2026-11-08" Start="2026-11-08" />
+      <Rates>
+        <Rate CurrencyCode="USD" UnitMultiplier="1">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="80.00" AmountAfterTax="100.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="160.00" AmountAfterTax="220.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+            <BaseByGuestAmt AmountBeforeTax="240.00" AmountAfterTax="340.00" AgeQualifyingCode="10" NumberOfGuests="3" />
+          </BaseByGuestAmts>                
+          <GuaranteePolicies>
+            <GuaranteePolicy GuaranteeCode="DepositRequired" />
+          </GuaranteePolicies>
+          <CancelPolicies>
+            <CancelPenalty NonRefundable="true">
+              <Deadline AbsoluteDeadline="2026-05-30T18:00:00"
+                        OffsetDropTime="BeforeArrival"
+                        OffsetTimeUnit="Day"
+                        OffsetUnitMultiplier="2" />
+              <AmountPercent NmbrOfNights="1"
+                             Amount="200.00"
+                             Percent="100"
+                             CurrencyCode="USD"
+                             TaxInclusive="true"
+                             FeesInclusive="false"
+                             BasisType="Nights" />
+              <PenaltyDescription>
+                <Text>Free cancellation until 2 days before arrival. Then 1 night charged.</Text>
+              </PenaltyDescription>
+            </CancelPenalty>
+          </CancelPolicies>
+          <MealsIncluded MealPlanCodes="17" />
+        </Rate>
+        <Rate CurrencyCode="USD" UnitMultiplier="2">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="100.00" AmountAfterTax="100.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="120.00" AmountAfterTax="120.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+            <BaseByGuestAmt AmountBeforeTax="140.00" AmountAfterTax="140.00" AgeQualifyingCode="10" NumberOfGuests="3" />
+          </BaseByGuestAmts>
+        </Rate>
+        <Rate CurrencyCode="USD" UnitMultiplier="3">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="100.00" AmountAfterTax="100.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="120.00" AmountAfterTax="120.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+            <BaseByGuestAmt AmountBeforeTax="140.00" AmountAfterTax="140.00" AgeQualifyingCode="10" NumberOfGuests="3" />
+          </BaseByGuestAmts>
+        </Rate>
+      </Rates>
+    </RateAmountMessage>
+    <RateAmountMessage>
+      <StatusApplicationControl InvCode="QUEEN" RatePlanCode="HOP" End="2026-11-08" Start="2026-11-08" />
+      <Rates>
+        <Rate CurrencyCode="USD" UnitMultiplier="1">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="80.00" AmountAfterTax="120.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="140.00" AmountAfterTax="220.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+          </BaseByGuestAmts>
+          <CancelPolicies>
+            <CancelPenalty NonRefundable="false">
+              <Deadline OffsetTimeUnit="Day"
+                        OffsetUnitMultiplier="1"
+                        OffsetDropTime="BeforeArrival"/>
+              <AmountPercent Percent="80"
+                             TaxInclusive="true"
+                             FeesInclusive="true"
+                             BasisType="FullStay"/>
+            </CancelPenalty>
+          </CancelPolicies>
+        </Rate>
+      </Rates>
+    </RateAmountMessage>
+  </RateAmountMessages>
+  <AvailStatusMessages HotelCode="MART1">
+	<AvailStatusMessage BookingLimitMessageType="SetLimit" BookingLimit="12">
+			<StatusApplicationControl Start="2026-11-08" End="2026-11-08" InvCode="KING" RatePlanCode="HOP"  Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <LengthsOfStay>
+        <LengthOfStay MinMaxMessageType="FullPatternLOS">
+          <LOS_Pattern FullPatternLOS="10001111" />
+        </LengthOfStay>
+      </LengthsOfStay>
+		</AvailStatusMessage>
+	<AvailStatusMessage BookingLimitMessageType="SetLimit" BookingLimit="13">
+			<StatusApplicationControl Start="2026-11-08" End="2026-11-08" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <LengthsOfStay>
+				<LengthOfStay MinMaxMessageType="FullPatternLOS">
+          <LOS_Pattern FullPatternLOS="10001111" />
+        </LengthOfStay>
+			</LengthsOfStay>
+     <RestrictionStatus Status="Open" />
+		</AvailStatusMessage>
+  </AvailStatusMessages>
+</OTA_HotelARINotifRQ>

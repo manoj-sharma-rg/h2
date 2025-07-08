@@ -27,13 +27,31 @@ import {
   FormControlLabel,
   Radio,
   Tooltip,
-  ListSubheader
+  ListSubheader,
+  Container,
+  useMediaQuery,
+  useTheme,
+  AppBar,
+  Toolbar
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { ExpandMore, Code, Download } from '@mui/icons-material';
 import InfoIcon from '@mui/icons-material/Info';
 
 const API_BASE = 'http://localhost:8000/api/v1';
+
+// Helper function to read file content
+const readFileContent = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      resolve(content);
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsText(file);
+  });
+};
 
 interface PMSWizardData {
   pmsCode: string;
@@ -48,6 +66,7 @@ interface PMSWizardData {
   translatorCode: string;
   mappingYaml: string;
   combinedAvailRate?: boolean;
+  specsDocument: File | null;
 }
 
 const availFields = [
@@ -84,23 +103,44 @@ function getFieldDescription(field: string) {
   return descs[field] || '';
 }
 
-// AI mapping suggestion function (to be implemented with backend integration)
+// AI mapping suggestion function with backend integration
 async function getAIMappingSuggestion({
   field,
   sampleMessage,
   rgbridgeFields,
-  type
+  type,
+  specsDocumentContent
 }: {
   field: string;
   sampleMessage: string;
   rgbridgeFields: string[];
   type: 'availability' | 'rate';
-}): Promise<string | null> {
-  // TODO: Call backend AI mapping suggestion endpoint
-  // Example:
-  // const response = await fetch(`${API_BASE}/wizard/suggest-mapping`, { ... })
-  // return (await response.json()).suggestion;
-  return null;
+  specsDocumentContent?: string;
+}): Promise<{ suggestion: string | null, method: string | null }> {
+  try {
+    const payload: any = {
+      field,
+      sample_message: sampleMessage,
+      rgbridge_fields: rgbridgeFields,
+      type
+    };
+    
+    // Include specs document content if available
+    if (specsDocumentContent) {
+      payload.specs_document_content = specsDocumentContent;
+    }
+    
+    const response = await fetch(`${API_BASE}/wizard/suggest-mapping`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error('Failed to get mapping suggestion');
+    const data = await response.json();
+    return { suggestion: data.suggestion, method: data.method };
+  } catch (e) {
+    return { suggestion: null, method: null };
+  }
 }
 
 const PMSIntegrationWizard = () => {
@@ -117,7 +157,8 @@ const PMSIntegrationWizard = () => {
     customConversions: {},
     translatorCode: '',
     mappingYaml: '',
-    combinedAvailRate: false
+    combinedAvailRate: false,
+    specsDocument: null
   });
 
   const [loading, setLoading] = useState(false);
@@ -130,7 +171,7 @@ const PMSIntegrationWizard = () => {
   const [mappingDialogType, setMappingDialogType] = useState<'availability' | 'rate'>('availability');
   const [mappingDialogFieldObj, setMappingDialogFieldObj] = useState<{ value: string, label: string } | null>(null);
   const [mappingDialogConversion, setMappingDialogConversion] = useState('');
-  const [aiSuggestion, setAISuggestion] = useState<string | null>(null);
+  const [aiSuggestion, setAISuggestion] = useState<{ suggestion: string | null, method: string | null }>({ suggestion: null, method: null });
   const [aiLoading, setAILoading] = useState(false);
 
   const steps = [
@@ -139,6 +180,9 @@ const PMSIntegrationWizard = () => {
     'Mapping Configuration',
     'Code Generation & Registration'
   ];
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handlePMSInfoChange = (field: keyof PMSWizardData, value: any) => {
     setWizardData(prev => ({ ...prev, [field]: value }));
@@ -170,7 +214,8 @@ const PMSIntegrationWizard = () => {
       customConversions: {},
       translatorCode: '',
       mappingYaml: '',
-      combinedAvailRate: false
+      combinedAvailRate: false,
+      specsDocument: null
     });
     setError(null);
     setSuccess(null);
@@ -185,12 +230,23 @@ const PMSIntegrationWizard = () => {
         pms_code: wizardData.pmsCode,
         message_format: wizardData.messageFormat
       };
+      
+      // Include specs document content if available
+      if (wizardData.specsDocument) {
+        try {
+          analyzePayload.specs_document_content = await readFileContent(wizardData.specsDocument);
+        } catch (e) {
+          console.warn('Failed to read specs document:', e);
+        }
+      }
+      
       if (wizardData.sampleAvailabilityMessage && wizardData.sampleRateMessage) {
         analyzePayload.availability_message = wizardData.sampleAvailabilityMessage;
         analyzePayload.rate_message = wizardData.sampleRateMessage;
       } else if (wizardData.sampleAvailabilityMessage || wizardData.sampleRateMessage) {
         analyzePayload.combined_message = wizardData.sampleAvailabilityMessage || wizardData.sampleRateMessage;
       }
+      
       const response = await fetch(`${API_BASE}/wizard/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -230,7 +286,7 @@ const PMSIntegrationWizard = () => {
   const openMappingDialog = (field: string) => {
     setCurrentMappingField(field);
     setCurrentMappingValue('');
-    setAISuggestion(null);
+    setAISuggestion({ suggestion: null, method: null });
     setMappingDialogOpen(true);
   };
 
@@ -268,17 +324,23 @@ const PMSIntegrationWizard = () => {
 
   const handleAISuggest = async () => {
     setAILoading(true);
-    setAISuggestion(null);
+    setAISuggestion({ suggestion: null, method: null });
     try {
-      const suggestion = await getAIMappingSuggestion({
+      let specsDocumentContent: string | undefined;
+      if (wizardData.specsDocument) {
+        specsDocumentContent = await readFileContent(wizardData.specsDocument);
+      }
+      
+      const result = await getAIMappingSuggestion({
         field: currentMappingField,
         sampleMessage: mappingDialogType === 'availability' ? wizardData.sampleAvailabilityMessage : wizardData.sampleRateMessage,
         rgbridgeFields: mappingDialogType === 'availability' ? availFields.map(f => f.value) : rateFields.map(f => f.value),
-        type: mappingDialogType
+        type: mappingDialogType,
+        specsDocumentContent
       });
-      setAISuggestion(suggestion);
+      setAISuggestion(result);
     } catch (e) {
-      setAISuggestion('No suggestion found.');
+      setAISuggestion({ suggestion: 'No suggestion found.', method: null });
     } finally {
       setAILoading(false);
     }
@@ -324,7 +386,7 @@ const PMSIntegrationWizard = () => {
   const handleFinish = async () => {
     setLoading(true);
     setError(null);
-    
+    setSuccess(null);
     try {
       // Register PMS
       const pmsResponse = await fetch(`${API_BASE}/pms`, {
@@ -337,25 +399,31 @@ const PMSIntegrationWizard = () => {
           combined_avail_rate: String(!!wizardData.combinedAvailRate)
         })
       });
-
       if (!pmsResponse.ok) throw new Error('Failed to register PMS');
 
       // Upload mapping
       const mappingBlob = new Blob([wizardData.mappingYaml], { type: 'application/x-yaml' });
       const mappingFile = new File([mappingBlob], `${wizardData.pmsCode}.yaml`, { type: 'application/x-yaml' });
-      
       const mappingFormData = new FormData();
       mappingFormData.append('file', mappingFile);
-      
       const mappingResponse = await fetch(`${API_BASE}/mappings/${wizardData.pmsCode}`, {
         method: 'POST',
         body: mappingFormData
       });
-
       if (!mappingResponse.ok) throw new Error('Failed to upload mapping');
 
-      setSuccess('PMS integration completed successfully!');
-      
+      // Upload translator
+      const translatorBlob = new Blob([wizardData.translatorCode], { type: 'text/x-python' });
+      const translatorFile = new File([translatorBlob], `${wizardData.pmsCode}_translator.py`, { type: 'text/x-python' });
+      const translatorFormData = new FormData();
+      translatorFormData.append('file', translatorFile);
+      const translatorResponse = await fetch(`${API_BASE}/translators/${wizardData.pmsCode}`, {
+        method: 'POST',
+        body: translatorFormData
+      });
+      if (!translatorResponse.ok) throw new Error('Failed to upload translator');
+
+      setSuccess('PMS integration completed successfully! Mapping and translator uploaded.');
     } catch (err: any) {
       setError(err.message || 'Integration failed');
     } finally {
@@ -426,6 +494,28 @@ const PMSIntegrationWizard = () => {
                   />
                   This PMS sends combined availability+rate messages
                 </label>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Upload Full Specs Document (Optional)
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Upload a complete specifications document for this PMS. This will be used for analysis, mapping, and doubt clearing during integration.
+                </Typography>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,.md"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    handlePMSInfoChange('specsDocument', file);
+                  }}
+                  style={{ marginTop: 8 }}
+                />
+                {wizardData.specsDocument && (
+                  <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                    Selected: {wizardData.specsDocument.name} ({(wizardData.specsDocument.size / 1024 / 1024).toFixed(2)} MB)
+                  </Typography>
+                )}
               </Grid>
             </Grid>
           </Paper>
@@ -498,6 +588,15 @@ const PMSIntegrationWizard = () => {
                   startIcon={loading ? <CircularProgress size={20} /> : <Code />}
                 >
                   {loading ? 'Analyzing...' : 'Analyze Message Format'}
+                  {wizardData.specsDocument && (
+                    <Chip 
+                      label="With Specs" 
+                      size="small" 
+                      color="primary" 
+                      variant="outlined" 
+                      sx={{ ml: 1, height: 20 }}
+                    />
+                  )}
                 </Button>
                 {success && (
                   <Alert severity="success" sx={{ mt: 2 }}>
@@ -718,52 +817,88 @@ const PMSIntegrationWizard = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        PMS Integration Wizard
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Automatically integrate a new PMS by analyzing message formats and generating translator code.
-      </Typography>
+    <Container maxWidth="md" sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', background: theme.palette.background.default, p: { xs: 0, sm: 2 } }}>
+      {/* AppBar/Header */}
+      <AppBar position="static" color="default" elevation={1} sx={{ mb: 4 }}>
+        <Toolbar sx={{ justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Optionally add a logo here */}
+            <Typography variant="h5" color="primary" fontWeight={700} sx={{ letterSpacing: 1 }}>
+              PMS Integration Wizard
+            </Typography>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-        {steps.map((label) => (
-          <Step key={label}>
+      {/* Stepper */}
+      <Stepper activeStep={activeStep} alternativeLabel sx={{ width: '100%', mb: 4 }}>
+        {steps.map((label, idx) => (
+          <Step key={label} completed={activeStep > idx}>
             <StepLabel>{label}</StepLabel>
           </Step>
         ))}
       </Stepper>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+      {/* Main Card */}
+      <Paper elevation={3} sx={{ width: '100%', maxWidth: 700, mx: 'auto', p: { xs: 2, sm: 4 }, mb: 4, minHeight: 400, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
+        {/* Success/Error Alerts */}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-      {renderStepContent(activeStep)}
-
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-        <Button
-          disabled={activeStep === 0}
-          onClick={handleBack}
-        >
-          Back
-        </Button>
-        <Box>
-          <Button onClick={handleReset} sx={{ mr: 1 }}>
-            Reset
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleNext}
-            disabled={loading}
-          >
-            {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
-          </Button>
+        {/* Step Content */}
+        <Box sx={{ flexGrow: 1, width: '100%' }}>
+          {renderStepContent(activeStep)}
         </Box>
-      </Box>
 
-      <Dialog open={mappingDialogOpen} onClose={() => setMappingDialogOpen(false)}>
+        {/* Navigation Buttons - fixed at bottom of card */}
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          px: { xs: 2, sm: 4 },
+          py: 2,
+          background: 'rgba(255,255,255,0.95)',
+          borderTop: `1px solid ${theme.palette.divider}`,
+          zIndex: 2
+        }}>
+          <Button
+            disabled={activeStep === 0}
+            onClick={handleBack}
+            variant="outlined"
+            size={isMobile ? 'small' : 'medium'}
+          >
+            Back
+          </Button>
+          <Box>
+            <Button onClick={handleReset} sx={{ mr: 1 }} size={isMobile ? 'small' : 'medium'} color="secondary">
+              Reset
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              disabled={loading}
+              size={isMobile ? 'small' : 'medium'}
+            >
+              {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+            </Button>
+          </Box>
+        </Box>
+      </Paper>
+
+      {/* Mapping Dialog (unchanged) */}
+      <Dialog open={mappingDialogOpen} onClose={() => setMappingDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Add Mapping for "{currentMappingField}"</DialogTitle>
         <DialogContent>
           <RadioGroup
@@ -784,6 +919,32 @@ const PMSIntegrationWizard = () => {
             renderInput={params => <TextField {...params} label="RGBridge Field" />}
             sx={{ mb: 2 }}
           />
+          <Button
+            variant="outlined"
+            onClick={handleAISuggest}
+            disabled={aiLoading}
+            sx={{ mb: 2 }}
+          >
+            {aiLoading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+            AI Suggest
+            {wizardData.specsDocument && (
+              <Chip 
+                label="With Specs" 
+                size="small" 
+                color="primary" 
+                variant="outlined" 
+                sx={{ ml: 1, height: 20 }}
+              />
+            )}
+          </Button>
+          {aiSuggestion.suggestion && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Suggested mapping: <strong>{aiSuggestion.suggestion}</strong>
+              {aiSuggestion.method && (
+                <span> (Source: {aiSuggestion.method === 'ai' ? 'AI' : 'Heuristic'})</span>
+              )}
+            </Alert>
+          )}
           <Tooltip title={getFieldDescription(mappingDialogFieldObj?.value || '')}>
             <InfoIcon sx={{ mb: 2, ml: 1 }} />
           </Tooltip>
@@ -807,7 +968,7 @@ const PMSIntegrationWizard = () => {
           <Button onClick={handleAddAdvancedMapping} variant="contained">Add</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   );
 };
 

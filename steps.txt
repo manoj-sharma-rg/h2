@@ -133,15 +133,17 @@ deploy to lambda: rzgn-dev-sqs-lambda, with linux build, https://mlkx1tv0ma.exec
 docker run -it --rm -v %cd%:/var/task public.ecr.aws/lambda/python:3.12 bash
 
 make a rgbridge call
+create translator on the fly with registration
+architectural diagram create
+ui material
+
+--
+
+specs analysis
+
 different types of authentications for lambda call
 rgbridge api call authentication
-
 handling unmapped fields
-create translator on the fly with registration
-
-
 rgbridge call single call for combined message
 third type of message handling
-architectural diagram create
-
 

@@ -1,4 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Card, CardContent, Typography, List, ListItem, ListItemText, IconButton, TextField, Button, Alert, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogActions, Grid } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AddIcon from '@mui/icons-material/Add';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
@@ -12,6 +17,9 @@ const Schemas = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<string | null>(null);
   const uploadCodeRef = useRef<HTMLInputElement>(null);
   const uploadFileRef = useRef<HTMLInputElement>(null);
 
@@ -34,6 +42,20 @@ const Schemas = () => {
     fetchSchemas();
     // eslint-disable-next-line
   }, []);
+
+  const handleShowUpload = () => {
+    setShowUpload(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+  };
+
+  const handleCancelUpload = () => {
+    setShowUpload(false);
+    setUploadError(null);
+    setUploadSuccess(null);
+    if (uploadCodeRef.current) uploadCodeRef.current.value = '';
+    if (uploadFileRef.current) uploadFileRef.current.value = '';
+  };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,63 +88,136 @@ const Schemas = () => {
     }
   };
 
-  const handleDelete = async (filename: string) => {
-    if (!window.confirm(`Are you sure you want to delete schema '${filename}'?`)) return;
-    setDeleting(filename);
+  const handleDelete = (filename: string) => {
+    setToDelete(filename);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(toDelete);
     setDeleteError(null);
     setDeleteSuccess(null);
     try {
-      const res = await fetch(`${API_BASE}/schemas/${filename}`, {
+      const res = await fetch(`${API_BASE}/schemas/${toDelete}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to delete schema');
-      setDeleteSuccess(`Schema '${filename}' deleted.`);
+      setDeleteSuccess(`Schema '${toDelete}' deleted.`);
       await fetchSchemas();
     } catch (err: any) {
       setDeleteError(err.message || 'Unknown error');
     } finally {
       setDeleting(null);
+      setDeleteDialogOpen(false);
+      setToDelete(null);
     }
   };
 
   return (
-    <div>
-      <h1>Manage Schemas</h1>
-      <form onSubmit={handleUpload} style={{ marginBottom: 24, padding: 16, border: '1px solid #ccc', borderRadius: 8, background: '#f6f8fa' }}>
-        <h2>Upload New Schema</h2>
-        <div style={{ marginBottom: 8 }}>
-          <label>PMS Code: <input type="text" ref={uploadCodeRef} required disabled={uploading} /></label>
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>Schema File: <input type="file" ref={uploadFileRef} accept=".xsd,.json,.yaml,.yml" required disabled={uploading} /></label>
-        </div>
-        <button type="submit" disabled={uploading}>Upload</button>
-        {uploading && <span style={{ marginLeft: 12 }}>Uploading...</span>}
-        {uploadError && <span style={{ color: 'red', marginLeft: 12 }}>{uploadError}</span>}
-        {uploadSuccess && <span style={{ color: 'green', marginLeft: 12 }}>{uploadSuccess}</span>}
-      </form>
-      {deleteError && <p style={{ color: 'red' }}>{deleteError}</p>}
-      {deleteSuccess && <p style={{ color: 'green' }}>{deleteSuccess}</p>}
-      {loading && <p>Loading schemas...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {!loading && !error && (
-        <ul>
-          {schemas.length === 0 && <li>No schemas found.</li>}
-          {schemas.map((filename) => (
-            <li key={filename}>
-              {filename}
-              <button
-                onClick={() => handleDelete(filename)}
-                style={{ marginLeft: 8, color: 'red' }}
-                disabled={deleting === filename}
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 400 }}>
+      <Card elevation={3} sx={{ width: '100%', maxWidth: 800, mt: 2 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h5" color="primary" fontWeight={700}>
+              Manage Schemas
+            </Typography>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleShowUpload}>
+              Upload New Schema
+            </Button>
+          </Box>
+          {deleteError && <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert>}
+          {deleteSuccess && <Alert severity="success" sx={{ mb: 2 }}>{deleteSuccess}</Alert>}
+          {uploadError && <Alert severity="error" sx={{ mb: 2 }}>{uploadError}</Alert>}
+          {uploadSuccess && <Alert severity="success" sx={{ mb: 2 }}>{uploadSuccess}</Alert>}
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Alert severity="error">{error}</Alert>
+          ) : (
+            <List>
+              {schemas.length === 0 && (
+                <ListItem>
+                  <ListItemText primary="No schemas found." />
+                </ListItem>
+              )}
+              {schemas.map(filename => (
+                <ListItem key={filename} alignItems="flex-start" sx={{ py: 1 }}>
+                  <ListItemText
+                    primary={<Typography variant="subtitle1" fontWeight={600}>{filename}</Typography>}
+                  />
+                  <IconButton color="error" onClick={() => handleDelete(filename)} disabled={deleting === filename}>
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
+          )}
+
+          {/* Upload Schema Dialog */}
+          <Dialog open={showUpload} onClose={handleCancelUpload} fullWidth maxWidth="sm">
+            <DialogTitle>Upload New Schema</DialogTitle>
+            <form onSubmit={handleUpload}>
+              <DialogContent>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="PMS Code"
+                      inputRef={uploadCodeRef}
+                      required
+                      fullWidth
+                      disabled={uploading}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      startIcon={<UploadFileIcon />} 
+                      fullWidth
+                      disabled={uploading}
+                    >
+                      Select Schema File
+                      <input
+                        type="file"
+                        ref={uploadFileRef}
+                        accept=".xsd,.json,.yaml,.yml"
+                        required
+                        hidden
+                        disabled={uploading}
+                      />
+                    </Button>
+                  </Grid>
+                </Grid>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCancelUpload} color="secondary" startIcon={<CancelIcon />} disabled={uploading}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="contained" color="primary" startIcon={<AddIcon />} disabled={uploading}>
+                  {uploading ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
+                  Upload
+                </Button>
+              </DialogActions>
+            </form>
+          </Dialog>
+
+          {/* Delete Confirmation Dialog */}
+          <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+            <DialogTitle>Delete Schema</DialogTitle>
+            <DialogContent>
+              <Typography>Are you sure you want to delete schema '{toDelete}'?</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDeleteDialogOpen(false)} color="secondary" startIcon={<CancelIcon />}>Cancel</Button>
+              <Button onClick={confirmDelete} color="error" variant="contained" startIcon={<DeleteIcon />}>Delete</Button>
+            </DialogActions>
+          </Dialog>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

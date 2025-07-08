@@ -1,4 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, Typography, List, ListItem, ListItemText, IconButton, TextField, Button, Alert, CircularProgress, Box, ListItemSecondaryAction, Stack, Checkbox } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
@@ -6,23 +11,16 @@ const PMSRegistration = () => {
   const [pmsList, setPmsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [registering, setRegistering] = useState(false);
-  const [registerError, setRegisterError] = useState<string | null>(null);
-  const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editCombinedAvailRate, setEditCombinedAvailRate] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-  const [combinedAvailRate, setCombinedAvailRate] = useState(false);
-  const [editCombinedAvailRate, setEditCombinedAvailRate] = useState(false);
-  const codeRef = useRef<HTMLInputElement>(null);
-  const nameRef = useRef<HTMLInputElement>(null);
-  const descRef = useRef<HTMLInputElement>(null);
 
   const fetchPMSList = async () => {
     setLoading(true);
@@ -43,43 +41,6 @@ const PMSRegistration = () => {
     fetchPMSList();
     // eslint-disable-next-line
   }, []);
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRegistering(true);
-    setRegisterError(null);
-    setRegisterSuccess(null);
-    const code = codeRef.current?.value.trim();
-    const name = nameRef.current?.value.trim();
-    const description = descRef.current?.value.trim();
-    if (!code || !name) {
-      setRegisterError('PMS code and name are required.');
-      setRegistering(false);
-      return;
-    }
-    try {
-      const formData = new FormData();
-      formData.append('code', code);
-      formData.append('name', name);
-      formData.append('description', description || '');
-      formData.append('combined_avail_rate', String(combinedAvailRate));
-      const res = await fetch(`${API_BASE}/pms`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Failed to register PMS');
-      setRegisterSuccess('PMS registered successfully!');
-      if (codeRef.current) codeRef.current.value = '';
-      if (nameRef.current) nameRef.current.value = '';
-      if (descRef.current) descRef.current.value = '';
-      setCombinedAvailRate(false);
-      await fetchPMSList();
-    } catch (err: any) {
-      setRegisterError(err.message || 'Unknown error');
-    } finally {
-      setRegistering(false);
-    }
-  };
 
   const handleDelete = async (code: string) => {
     if (!window.confirm(`Are you sure you want to delete PMS '${code}'?`)) return;
@@ -143,103 +104,98 @@ const PMSRegistration = () => {
   };
 
   return (
-    <div>
-      <h1>PMS Registration</h1>
-      <form onSubmit={handleRegister} style={{ marginBottom: 24, padding: 16, border: '1px solid #ccc', borderRadius: 8, background: '#f6f8fa' }}>
-        <h2>Register New PMS</h2>
-        <div style={{ marginBottom: 8 }}>
-          <label>PMS Code: <input type="text" ref={codeRef} required disabled={registering} /></label>
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>Name: <input type="text" ref={nameRef} required disabled={registering} /></label>
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>Description: <input type="text" ref={descRef} disabled={registering} /></label>
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>
-            <input
-              type="checkbox"
-              checked={combinedAvailRate}
-              onChange={e => setCombinedAvailRate(e.target.checked)}
-              disabled={registering}
-            />{' '}
-            This PMS sends combined availability+rate messages
-          </label>
-        </div>
-        <button type="submit" disabled={registering}>Register</button>
-        {registering && <span style={{ marginLeft: 12 }}>Registering...</span>}
-        {registerError && <span style={{ color: 'red', marginLeft: 12 }}>{registerError}</span>}
-        {registerSuccess && <span style={{ color: 'green', marginLeft: 12 }}>{registerSuccess}</span>}
-      </form>
-      {deleteError && <p style={{ color: 'red' }}>{deleteError}</p>}
-      {deleteSuccess && <p style={{ color: 'green' }}>{deleteSuccess}</p>}
-      <h2>Registered PMSs</h2>
-      {loading && <p>Loading PMS list...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {!loading && !error && (
-        <ul>
-          {Array.isArray(pmsList) && pmsList.length === 0 && <li>No PMSs registered.</li>}
-          {Array.isArray(pmsList) && pmsList.map((pms: any) => (
-            <li key={pms.code || pms.name}>
-              {editing === pms.code ? (
-                <form onSubmit={e => { e.preventDefault(); handleSaveEdit(pms.code); }} style={{ display: 'inline' }}>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    required
-                    disabled={savingEdit}
-                    style={{ marginRight: 8 }}
-                  />
-                  <input
-                    type="text"
-                    value={editDesc}
-                    onChange={e => setEditDesc(e.target.value)}
-                    disabled={savingEdit}
-                    style={{ marginRight: 8 }}
-                  />
-                  <label style={{ marginRight: 8 }}>
-                    <input
-                      type="checkbox"
-                      checked={editCombinedAvailRate}
-                      onChange={e => setEditCombinedAvailRate(e.target.checked)}
-                      disabled={savingEdit}
-                    />{' '}
-                    Combined Avail+Rate
-                  </label>
-                  <button type="submit" disabled={savingEdit}>Save</button>
-                  <button type="button" onClick={handleCancelEdit} disabled={savingEdit} style={{ marginLeft: 4 }}>Cancel</button>
-                  {savingEdit && <span style={{ marginLeft: 8 }}>Saving...</span>}
-                  {editError && <span style={{ color: 'red', marginLeft: 8 }}>{editError}</span>}
-                  {editSuccess && <span style={{ color: 'green', marginLeft: 8 }}>{editSuccess}</span>}
-                </form>
-              ) : (
-                <>
-                  <b>{pms.code}</b> - {pms.name} {pms.status && <span>({pms.status})</span>}
-                  {pms.description && <span>: {pms.description}</span>}
-                  {pms.combined_avail_rate && <span style={{ color: '#1976d2', marginLeft: 8 }}>[Combined Avail+Rate]</span>}
-                  <button
-                    onClick={() => handleEdit(pms)}
-                    style={{ marginLeft: 8 }}
-                    disabled={deleting === pms.code}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(pms.code)}
-                    style={{ marginLeft: 8, color: 'red' }}
-                    disabled={deleting === pms.code}
-                  >
-                    Delete
-                  </button>
-                </>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 400 }}>
+      <Card elevation={3} sx={{ width: '100%', maxWidth: 600, mt: 2 }}>
+        <CardContent>
+          <Typography variant="h5" color="primary" fontWeight={700} gutterBottom align="center">
+            Registered PMSs
+          </Typography>
+          {deleteError && <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert>}
+          {deleteSuccess && <Alert severity="success" sx={{ mb: 2 }}>{deleteSuccess}</Alert>}
+          {editError && <Alert severity="error" sx={{ mb: 2 }}>{editError}</Alert>}
+          {editSuccess && <Alert severity="success" sx={{ mb: 2 }}>{editSuccess}</Alert>}
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Alert severity="error">{error}</Alert>
+          ) : (
+            <List>
+              {Array.isArray(pmsList) && pmsList.length === 0 && (
+                <ListItem>
+                  <ListItemText primary="No PMSs registered." />
+                </ListItem>
               )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+              {Array.isArray(pmsList) && pmsList.map((pms: any) => (
+                <ListItem key={pms.code || pms.name} alignItems="flex-start" sx={{ py: 1 }}>
+                  {editing === pms.code ? (
+                    <Stack direction="column" spacing={1} sx={{ width: '100%' }}>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="center">
+                        <TextField
+                          label="Name"
+                          value={editName}
+                          onChange={e => setEditName(e.target.value)}
+                          size="small"
+                          required
+                          disabled={savingEdit}
+                          sx={{ flex: 1 }}
+                        />
+                        <TextField
+                          label="Description"
+                          value={editDesc}
+                          onChange={e => setEditDesc(e.target.value)}
+                          size="small"
+                          disabled={savingEdit}
+                          sx={{ flex: 2 }}
+                        />
+                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                          <Checkbox
+                            checked={editCombinedAvailRate}
+                            onChange={e => setEditCombinedAvailRate(e.target.checked)}
+                            disabled={savingEdit}
+                            size="small"
+                          />
+                          <Typography variant="body2">Combined Avail+Rate</Typography>
+                        </Box>
+                        <IconButton color="primary" onClick={() => handleSaveEdit(pms.code)} disabled={savingEdit} sx={{ ml: 1 }}>
+                          <SaveIcon />
+                        </IconButton>
+                        <IconButton color="secondary" onClick={handleCancelEdit} disabled={savingEdit}>
+                          <CancelIcon />
+                        </IconButton>
+                      </Stack>
+                    </Stack>
+                  ) : (
+                    <>
+                      <ListItemText
+                        primary={<Typography variant="subtitle1" fontWeight={600}>{pms.name} <Typography component="span" variant="body2" color="text.secondary">({pms.code})</Typography></Typography>}
+                        secondary={
+                          <>
+                            <Typography variant="body2" color="text.secondary">{pms.description}</Typography>
+                            {pms.combined_avail_rate && (
+                              <Typography variant="caption" color="primary" sx={{ ml: 1 }}>[Combined Avail+Rate]</Typography>
+                            )}
+                          </>
+                        }
+                      />
+                      <ListItemSecondaryAction>
+                        <IconButton edge="end" color="primary" onClick={() => handleEdit(pms)} sx={{ mr: 1 }}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton edge="end" color="error" onClick={() => handleDelete(pms.code)} disabled={deleting === pms.code}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </>
+                  )}
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

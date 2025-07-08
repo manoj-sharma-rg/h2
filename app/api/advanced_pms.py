@@ -193,8 +193,14 @@ async def list_translators() -> List[Dict[str, Any]]:
 async def register_translator(pms_code: str, file: UploadFile = File(...)) -> Dict[str, Any]:
     """Register/upload new translator code (dynamic plugin loading)"""
     logger.info(f"called register_translator")
-    # TODO: Save and dynamically load plugin code (advanced, security risk!)
-    return {"message": f"Translator for '{pms_code}' uploaded (not yet active)"}
+    pms_dir = os.path.join("pms", pms_code)
+    os.makedirs(pms_dir, exist_ok=True)
+    translator_path = os.path.join(pms_dir, "translator.py")
+    content = await file.read()
+    with open(translator_path, "wb") as f:
+        f.write(content)
+    logger.info(f"Uploaded translator for PMS: {pms_code}")
+    return {"message": f"Translator for '{pms_code}' uploaded"}
 
 # --- Test & Preview ---
 @router.post("/translate/{pms_code}")

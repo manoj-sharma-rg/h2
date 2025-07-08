@@ -1,4 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Card, CardContent, Typography, List, ListItem, ListItemText, IconButton, TextField, Button, Alert, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Snackbar } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AddIcon from '@mui/icons-material/Add';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
@@ -22,6 +29,8 @@ const Mappings = () => {
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<{valid: boolean, error?: string} | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<string | null>(null);
   const uploadCodeRef = useRef<HTMLInputElement>(null);
   const uploadFileRef = useRef<HTMLInputElement>(null);
 
@@ -163,96 +172,182 @@ const Mappings = () => {
     }
   };
 
-  const handleDelete = async (code: string) => {
-    if (!window.confirm(`Are you sure you want to delete mapping '${code}'?`)) return;
+  const handleDelete = (code: string) => {
+    setToDelete(code);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!toDelete) return;
     setDeleteError(null);
     setDeleteSuccess(null);
     try {
-      const res = await fetch(`${API_BASE}/mappings/${code}`, {
+      const res = await fetch(`${API_BASE}/mappings/${toDelete}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to delete mapping');
-      setDeleteSuccess(`Mapping '${code}' deleted.`);
+      setDeleteSuccess(`Mapping '${toDelete}' deleted.`);
       await fetchMappings();
     } catch (err: any) {
       setDeleteError(err.message || 'Unknown error');
+    } finally {
+      setDeleteDialogOpen(false);
+      setToDelete(null);
     }
   };
 
   return (
-    <div>
-      <h1>Manage Mappings</h1>
-      <button onClick={handleShowUpload} style={{ marginBottom: 16 }}>Upload New Mapping</button>
-      {showUpload && (
-        <form onSubmit={handleUpload} style={{ marginBottom: 24, padding: 16, border: '1px solid #ccc', borderRadius: 8, background: '#f6f8fa' }}>
-          <h2>Upload New Mapping</h2>
-          <div style={{ marginBottom: 8 }}>
-            <label>PMS Code: <input type="text" ref={uploadCodeRef} required disabled={uploading} /></label>
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <label>YAML File: <input type="file" ref={uploadFileRef} accept=".yaml,.yml" required disabled={uploading} /></label>
-          </div>
-          <button type="submit" disabled={uploading}>Upload</button>
-          <button type="button" onClick={handleCancelUpload} style={{ marginLeft: 8 }} disabled={uploading}>Cancel</button>
-          {uploading && <span style={{ marginLeft: 12 }}>Uploading...</span>}
-          {uploadError && <span style={{ color: 'red', marginLeft: 12 }}>{uploadError}</span>}
-          {uploadSuccess && <span style={{ color: 'green', marginLeft: 12 }}>{uploadSuccess}</span>}
-        </form>
-      )}
-      {deleteError && <p style={{ color: 'red' }}>{deleteError}</p>}
-      {deleteSuccess && <p style={{ color: 'green' }}>{deleteSuccess}</p>}
-      {loading && <p>Loading mappings...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {!loading && !error && (
-        <ul>
-          {mappings.length === 0 && <li>No mappings found.</li>}
-          {mappings.map((code) => (
-            <li key={code}>
-              {code}
-              {' '}
-              <button onClick={() => handleViewEdit(code)}>View/Edit</button>
-              <button onClick={() => handleDelete(code)} style={{ marginLeft: 8, color: 'red' }}>Delete</button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {editing && selected && (
-        <div style={{ marginTop: 32, padding: 16, border: '1px solid #ccc', borderRadius: 8, background: '#fafbfc' }}>
-          <h2>Editing: {selected}.yaml</h2>
-          {yamlLoading && <p>Loading YAML...</p>}
-          {yamlError && <p style={{ color: 'red' }}>{yamlError}</p>}
-          {!yamlLoading && !yamlError && (
-            <>
-              <textarea
-                value={yaml}
-                onChange={e => setYaml(e.target.value)}
-                rows={20}
-                style={{ width: '100%', fontFamily: 'monospace', fontSize: 14 }}
-                disabled={saving}
-              />
-              <div style={{ marginTop: 12 }}>
-                <button onClick={handleSave} disabled={saving}>Save</button>
-                <button onClick={handleCancel} style={{ marginLeft: 8 }} disabled={saving}>Cancel</button>
-                <button onClick={handleValidate} disabled={saving || validating} style={{ marginLeft: 8 }}>Validate</button>
-                {saving && <span style={{ marginLeft: 12 }}>Saving...</span>}
-                {validating && <span style={{ marginLeft: 12 }}>Validating...</span>}
-                {saveError && <span style={{ color: 'red', marginLeft: 12 }}>{saveError}</span>}
-                {saveSuccess && <span style={{ color: 'green', marginLeft: 12 }}>{saveSuccess}</span>}
-              </div>
-              {validationResult && (
-                <div style={{ marginTop: 10 }}>
-                  {validationResult.valid ? (
-                    <span style={{ color: 'green' }}>YAML is valid!</span>
-                  ) : (
-                    <span style={{ color: 'red' }}>Invalid YAML: {validationResult.error}</span>
-                  )}
-                </div>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 400 }}>
+      <Card elevation={3} sx={{ width: '100%', maxWidth: 800, mt: 2 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h5" color="primary" fontWeight={700}>
+              Manage Mappings
+            </Typography>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleShowUpload}>
+              Upload New Mapping
+            </Button>
+          </Box>
+          {deleteError && <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert>}
+          {deleteSuccess && <Alert severity="success" sx={{ mb: 2 }}>{deleteSuccess}</Alert>}
+          {saveError && <Alert severity="error" sx={{ mb: 2 }}>{saveError}</Alert>}
+          {saveSuccess && <Alert severity="success" sx={{ mb: 2 }}>{saveSuccess}</Alert>}
+          {uploadError && <Alert severity="error" sx={{ mb: 2 }}>{uploadError}</Alert>}
+          {uploadSuccess && <Alert severity="success" sx={{ mb: 2 }}>{uploadSuccess}</Alert>}
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Alert severity="error">{error}</Alert>
+          ) : (
+            <List>
+              {mappings.length === 0 && (
+                <ListItem>
+                  <ListItemText primary="No mappings found." />
+                </ListItem>
               )}
-            </>
+              {mappings.map(code => (
+                <ListItem key={code} alignItems="flex-start" sx={{ py: 1 }}>
+                  <ListItemText
+                    primary={<Typography variant="subtitle1" fontWeight={600}>{code}</Typography>}
+                  />
+                  <IconButton color="primary" onClick={() => handleViewEdit(code)} sx={{ mr: 1 }}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton color="error" onClick={() => handleDelete(code)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
           )}
-        </div>
-      )}
-    </div>
+
+          {/* Edit Mapping Dialog */}
+          <Dialog open={!!selected} onClose={handleCancel} fullWidth maxWidth="md">
+            <DialogTitle>Edit Mapping: {selected}</DialogTitle>
+            <DialogContent>
+              {yamlLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : yamlError ? (
+                <Alert severity="error">{yamlError}</Alert>
+              ) : (
+                <TextField
+                  label="YAML Mapping"
+                  value={yaml}
+                  onChange={e => setYaml(e.target.value)}
+                  multiline
+                  minRows={12}
+                  fullWidth
+                  variant="outlined"
+                  sx={{ fontFamily: 'monospace', mt: 2 }}
+                />
+              )}
+              {validationResult && (
+                <Alert severity={validationResult.valid ? 'success' : 'error'} sx={{ mt: 2 }}>
+                  {validationResult.valid ? 'Mapping is valid!' : `Invalid: ${validationResult.error}`}
+                </Alert>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleValidate} color="secondary" disabled={validating || yamlLoading}>
+                {validating ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
+                Validate
+              </Button>
+              <Button onClick={handleSave} color="primary" variant="contained" startIcon={<SaveIcon />} disabled={saving || yamlLoading}>
+                {saving ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
+                Save
+              </Button>
+              <Button onClick={handleCancel} color="secondary" startIcon={<CancelIcon />}>
+                Cancel
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Upload Mapping Dialog */}
+          <Dialog open={showUpload} onClose={handleCancelUpload} fullWidth maxWidth="sm">
+            <DialogTitle>Upload New Mapping</DialogTitle>
+            <form onSubmit={handleUpload}>
+              <DialogContent>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="PMS Code"
+                      inputRef={uploadCodeRef}
+                      required
+                      fullWidth
+                      disabled={uploading}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      startIcon={<UploadFileIcon />} 
+                      fullWidth
+                      disabled={uploading}
+                    >
+                      Select YAML File
+                      <input
+                        type="file"
+                        ref={uploadFileRef}
+                        accept=".yaml,.yml"
+                        required
+                        hidden
+                        disabled={uploading}
+                      />
+                    </Button>
+                  </Grid>
+                </Grid>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCancelUpload} color="secondary" startIcon={<CancelIcon />} disabled={uploading}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="contained" color="primary" startIcon={<AddIcon />} disabled={uploading}>
+                  {uploading ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
+                  Upload
+                </Button>
+              </DialogActions>
+            </form>
+          </Dialog>
+
+          {/* Delete Confirmation Dialog */}
+          <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+            <DialogTitle>Delete Mapping</DialogTitle>
+            <DialogContent>
+              <Typography>Are you sure you want to delete mapping '{toDelete}'?</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDeleteDialogOpen(false)} color="secondary" startIcon={<CancelIcon />}>Cancel</Button>
+              <Button onClick={confirmDelete} color="error" variant="contained" startIcon={<DeleteIcon />}>Delete</Button>
+            </DialogActions>
+          </Dialog>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

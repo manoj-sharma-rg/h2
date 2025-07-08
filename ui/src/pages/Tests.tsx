@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { Card, CardContent, Typography, Button, Alert, CircularProgress, Box, Grid } from '@mui/material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import SaveIcon from '@mui/icons-material/Save';
 
 const Tests = () => {
   const [running, setRunning] = useState(false);
@@ -37,19 +40,50 @@ const Tests = () => {
   };
 
   return (
-    <div>
-      <h1>Tests</h1>
-      <button onClick={runTests} disabled={running} style={{ marginRight: 12 }}>
-        {running ? 'Running...' : 'Run Tests'}
-      </button>
-      <button onClick={saveResults} disabled={!results}>
-        Save Results
-      </button>
-      {error && <div style={{ color: 'red', marginTop: 12 }}>{error}</div>}
-      <div style={{ marginTop: 24, maxHeight: 400, overflowY: 'auto', background: '#222', color: '#fff', padding: 16, borderRadius: 8, fontFamily: 'monospace', fontSize: 15 }}>
-        {results || (running ? 'Running tests...' : 'No results yet.')}
-      </div>
-    </div>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 400 }}>
+      <Card elevation={3} sx={{ width: '100%', maxWidth: 700, mt: 2 }}>
+        <CardContent>
+          <Typography variant="h5" color="primary" fontWeight={700} gutterBottom align="center">
+            Tests
+          </Typography>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={12} sm={6}>
+              <Button
+                onClick={runTests}
+                disabled={running}
+                variant="contained"
+                color="primary"
+                startIcon={<PlayArrowIcon />}
+                fullWidth
+                sx={{ minHeight: 48, fontWeight: 500 }}
+              >
+                {running ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+                {running ? 'Running...' : 'Run Tests'}
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Button
+                onClick={saveResults}
+                disabled={!results}
+                variant="outlined"
+                color="secondary"
+                startIcon={<SaveIcon />}
+                fullWidth
+                sx={{ minHeight: 48, fontWeight: 500 }}
+              >
+                Save Results
+              </Button>
+            </Grid>
+          </Grid>
+          <Card elevation={1} sx={{ background: '#222', color: '#fff', p: 2, borderRadius: 2, minHeight: 200, fontFamily: 'monospace', fontSize: 15 }}>
+            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+              {results || (running ? 'Running tests...' : 'No results yet.')}
+            </Box>
+          </Card>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 
