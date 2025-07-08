@@ -35,6 +35,19 @@ import InfoIcon from '@mui/icons-material/Info';
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
+// Helper function to read file content
+const readFileContent = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      resolve(content);
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsText(file);
+  });
+};
+
 interface PMSWizardData {
   pmsCode: string;
   pmsName: string;
@@ -48,6 +61,7 @@ interface PMSWizardData {
   translatorCode: string;
   mappingYaml: string;
   combinedAvailRate?: boolean;
+  specsDocument: File | null;
 }
 
 const availFields = [
@@ -89,23 +103,32 @@ async function getAIMappingSuggestion({
   field,
   sampleMessage,
   rgbridgeFields,
-  type
+  type,
+  specsDocumentContent
 }: {
   field: string;
   sampleMessage: string;
   rgbridgeFields: string[];
   type: 'availability' | 'rate';
+  specsDocumentContent?: string;
 }): Promise<{ suggestion: string | null, method: string | null }> {
   try {
+    const payload: any = {
+      field,
+      sample_message: sampleMessage,
+      rgbridge_fields: rgbridgeFields,
+      type
+    };
+    
+    // Include specs document content if available
+    if (specsDocumentContent) {
+      payload.specs_document_content = specsDocumentContent;
+    }
+    
     const response = await fetch(`${API_BASE}/wizard/suggest-mapping`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        field,
-        sample_message: sampleMessage,
-        rgbridge_fields: rgbridgeFields,
-        type
-      })
+      body: JSON.stringify(payload)
     });
     if (!response.ok) throw new Error('Failed to get mapping suggestion');
     const data = await response.json();
@@ -129,7 +152,8 @@ const PMSIntegrationWizard = () => {
     customConversions: {},
     translatorCode: '',
     mappingYaml: '',
-    combinedAvailRate: false
+    combinedAvailRate: false,
+    specsDocument: null
   });
 
   const [loading, setLoading] = useState(false);
@@ -182,7 +206,8 @@ const PMSIntegrationWizard = () => {
       customConversions: {},
       translatorCode: '',
       mappingYaml: '',
-      combinedAvailRate: false
+      combinedAvailRate: false,
+      specsDocument: null
     });
     setError(null);
     setSuccess(null);
@@ -197,12 +222,23 @@ const PMSIntegrationWizard = () => {
         pms_code: wizardData.pmsCode,
         message_format: wizardData.messageFormat
       };
+      
+      // Include specs document content if available
+      if (wizardData.specsDocument) {
+        try {
+          analyzePayload.specs_document_content = await readFileContent(wizardData.specsDocument);
+        } catch (e) {
+          console.warn('Failed to read specs document:', e);
+        }
+      }
+      
       if (wizardData.sampleAvailabilityMessage && wizardData.sampleRateMessage) {
         analyzePayload.availability_message = wizardData.sampleAvailabilityMessage;
         analyzePayload.rate_message = wizardData.sampleRateMessage;
       } else if (wizardData.sampleAvailabilityMessage || wizardData.sampleRateMessage) {
         analyzePayload.combined_message = wizardData.sampleAvailabilityMessage || wizardData.sampleRateMessage;
       }
+      
       const response = await fetch(`${API_BASE}/wizard/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -282,11 +318,17 @@ const PMSIntegrationWizard = () => {
     setAILoading(true);
     setAISuggestion({ suggestion: null, method: null });
     try {
+      let specsDocumentContent: string | undefined;
+      if (wizardData.specsDocument) {
+        specsDocumentContent = await readFileContent(wizardData.specsDocument);
+      }
+      
       const result = await getAIMappingSuggestion({
         field: currentMappingField,
         sampleMessage: mappingDialogType === 'availability' ? wizardData.sampleAvailabilityMessage : wizardData.sampleRateMessage,
         rgbridgeFields: mappingDialogType === 'availability' ? availFields.map(f => f.value) : rateFields.map(f => f.value),
-        type: mappingDialogType
+        type: mappingDialogType,
+        specsDocumentContent
       });
       setAISuggestion(result);
     } catch (e) {
@@ -445,6 +487,28 @@ const PMSIntegrationWizard = () => {
                   This PMS sends combined availability+rate messages
                 </label>
               </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Upload Full Specs Document (Optional)
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Upload a complete specifications document for this PMS. This will be used for analysis, mapping, and doubt clearing during integration.
+                </Typography>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,.md"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    handlePMSInfoChange('specsDocument', file);
+                  }}
+                  style={{ marginTop: 8 }}
+                />
+                {wizardData.specsDocument && (
+                  <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                    Selected: {wizardData.specsDocument.name} ({(wizardData.specsDocument.size / 1024 / 1024).toFixed(2)} MB)
+                  </Typography>
+                )}
+              </Grid>
             </Grid>
           </Paper>
         );
@@ -516,6 +580,15 @@ const PMSIntegrationWizard = () => {
                   startIcon={loading ? <CircularProgress size={20} /> : <Code />}
                 >
                   {loading ? 'Analyzing...' : 'Analyze Message Format'}
+                  {wizardData.specsDocument && (
+                    <Chip 
+                      label="With Specs" 
+                      size="small" 
+                      color="primary" 
+                      variant="outlined" 
+                      sx={{ ml: 1, height: 20 }}
+                    />
+                  )}
                 </Button>
                 {success && (
                   <Alert severity="success" sx={{ mt: 2 }}>
@@ -737,6 +810,17 @@ const PMSIntegrationWizard = () => {
 
   return (
     <Box sx={{ width: '100%', p: 3 }}>
+      {/* Show success or error message at the top */}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
       <Typography variant="h4" gutterBottom>
         PMS Integration Wizard
       </Typography>
@@ -751,12 +835,6 @@ const PMSIntegrationWizard = () => {
           </Step>
         ))}
       </Stepper>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
 
       {renderStepContent(activeStep)}
 
@@ -810,6 +888,15 @@ const PMSIntegrationWizard = () => {
           >
             {aiLoading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
             AI Suggest
+            {wizardData.specsDocument && (
+              <Chip 
+                label="With Specs" 
+                size="small" 
+                color="primary" 
+                variant="outlined" 
+                sx={{ ml: 1, height: 20 }}
+              />
+            )}
           </Button>
           {aiSuggestion.suggestion && (
             <Alert severity="info" sx={{ mb: 2 }}>

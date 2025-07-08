@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid Technologies Online Tools 1.0 (https://www.liquid-technologies.com) -->
+<xs:schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.opentravel.org/OTA/2003/05">
+  <xsd:element name="OTA_HotelARINotifRQ">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="RateAmountMessages">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element maxOccurs="unbounded" name="RateAmountMessage">
+                <xsd:complexType>
+                  <xsd:sequence>
+                    <xsd:element name="StatusApplicationControl">
+                      <xsd:complexType>
+                        <xsd:attribute name="InvCode" type="xsd:string" use="required" />
+                        <xsd:attribute name="RatePlanCode" type="xsd:string" use="required" />
+                        <xsd:attribute name="End" type="xsd:date" use="required" />
+                        <xsd:attribute name="Start" type="xsd:date" use="required" />
+                      </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="Rates">
+                      <xsd:complexType>
+                        <xsd:sequence>
+                          <xsd:element maxOccurs="unbounded" name="Rate">
+                            <xsd:complexType>
+                              <xsd:sequence>
+                                <xsd:element name="BaseByGuestAmts">
+                                  <xsd:complexType>
+                                    <xsd:sequence>
+                                      <xsd:element maxOccurs="unbounded" name="BaseByGuestAmt">
+                                        <xsd:complexType>
+                                          <xsd:attribute name="AmountBeforeTax" type="xsd:decimal" use="required" />
+                                          <xsd:attribute name="AmountAfterTax" type="xsd:decimal" use="required" />
+                                          <xsd:attribute name="AgeQualifyingCode" type="xsd:unsignedByte" use="required" />
+                                          <xsd:attribute name="NumberOfGuests" type="xsd:unsignedByte" use="required" />
+                                        </xsd:complexType>
+                                      </xsd:element>
+                                    </xsd:sequence>
+                                  </xsd:complexType>
+                                </xsd:element>
+                                <xsd:element minOccurs="0" name="GuaranteePolicies">
+                                  <xsd:complexType>
+                                    <xsd:sequence>
+                                      <xsd:element name="GuaranteePolicy">
+                                        <xsd:complexType>
+                                          <xsd:attribute name="GuaranteeCode" type="xsd:string" use="required" />
+                                        </xsd:complexType>
+                                      </xsd:element>
+                                    </xsd:sequence>
+                                  </xsd:complexType>
+                                </xsd:element>
+                                <xsd:element minOccurs="0" name="CancelPolicies">
+                                  <xsd:complexType>
+                                    <xsd:sequence>
+                                      <xsd:element name="CancelPenalty">
+                                        <xsd:complexType>
+                                          <xsd:sequence>
+                                            <xsd:element name="Deadline">
+                                              <xsd:complexType>
+                                                <xsd:attribute name="AbsoluteDeadline" type="xsd:dateTime" use="optional" />
+                                                <xsd:attribute name="OffsetDropTime" type="xsd:string" use="required" />
+                                                <xsd:attribute name="OffsetTimeUnit" type="xsd:string" use="required" />
+                                                <xsd:attribute name="OffsetUnitMultiplier" type="xsd:unsignedByte" use="required" />
+                                              </xsd:complexType>
+                                            </xsd:element>
+                                            <xsd:element name="AmountPercent">
+                                              <xsd:complexType>
+                                                <xsd:attribute name="NmbrOfNights" type="xsd:unsignedByte" use="optional" />
+                                                <xsd:attribute name="Amount" type="xsd:decimal" use="optional" />
+                                                <xsd:attribute name="Percent" type="xsd:unsignedByte" use="required" />
+                                                <xsd:attribute name="CurrencyCode" type="xsd:string" use="optional" />
+                                                <xsd:attribute name="TaxInclusive" type="xsd:boolean" use="required" />
+                                                <xsd:attribute name="FeesInclusive" type="xsd:boolean" use="required" />
+                                                <xsd:attribute name="BasisType" type="xsd:string" use="required" />
+                                              </xsd:complexType>
+                                            </xsd:element>
+                                            <xsd:element minOccurs="0" name="PenaltyDescription">
+                                              <xsd:complexType>
+                                                <xsd:sequence>
+                                                  <xsd:element name="Text" type="xsd:string" />
+                                                </xsd:sequence>
+                                              </xsd:complexType>
+                                            </xsd:element>
+                                          </xsd:sequence>
+                                          <xsd:attribute name="NonRefundable" type="xsd:boolean" use="required" />
+                                        </xsd:complexType>
+                                      </xsd:element>
+                                    </xsd:sequence>
+                                  </xsd:complexType>
+                                </xsd:element>
+                                <xsd:element minOccurs="0" name="MealsIncluded">
+                                  <xsd:complexType>
+                                    <xsd:attribute name="MealPlanCodes" type="xsd:unsignedByte" use="required" />
+                                  </xsd:complexType>
+                                </xsd:element>
+                              </xsd:sequence>
+                              <xsd:attribute name="CurrencyCode" type="xsd:string" use="required" />
+                              <xsd:attribute name="UnitMultiplier" type="xsd:unsignedByte" use="required" />
+                            </xsd:complexType>
+                          </xsd:element>
+                        </xsd:sequence>
+                      </xsd:complexType>
+                    </xsd:element>
+                  </xsd:sequence>
+                </xsd:complexType>
+              </xsd:element>
+            </xsd:sequence>
+            <xsd:attribute name="HotelCode" type="xsd:string" use="required" />
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="AvailStatusMessages">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element maxOccurs="unbounded" name="AvailStatusMessage">
+                <xsd:complexType>
+                  <xsd:sequence>
+                    <xsd:element name="StatusApplicationControl">
+                      <xsd:complexType>
+                        <xsd:attribute name="Start" type="xsd:date" use="required" />
+                        <xsd:attribute name="End" type="xsd:date" use="required" />
+                        <xsd:attribute name="InvCode" type="xsd:string" use="required" />
+                        <xsd:attribute name="RatePlanCode" type="xsd:string" use="required" />
+                        <xsd:attribute name="Mon" type="xsd:boolean" use="required" />
+                        <xsd:attribute name="Tue" type="xsd:boolean" use="required" />
+                        <xsd:attribute name="Weds" type="xsd:boolean" use="required" />
+                        <xsd:attribute name="Thur" type="xsd:boolean" use="required" />
+                        <xsd:attribute name="Fri" type="xsd:boolean" use="required" />
+                        <xsd:attribute name="Sat" type="xsd:boolean" use="required" />
+                        <xsd:attribute name="Sun" type="xsd:boolean" use="required" />
+                      </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="LengthsOfStay">
+                      <xsd:complexType>
+                        <xsd:sequence>
+                          <xsd:element name="LengthOfStay">
+                            <xsd:complexType>
+                              <xsd:sequence>
+                                <xsd:element name="LOS_Pattern">
+                                  <xsd:complexType>
+                                    <xsd:attribute name="FullPatternLOS" type="xsd:unsignedInt" use="required" />
+                                  </xsd:complexType>
+                                </xsd:element>
+                              </xsd:sequence>
+                              <xsd:attribute name="MinMaxMessageType" type="xsd:string" use="required" />
+                            </xsd:complexType>
+                          </xsd:element>
+                        </xsd:sequence>
+                      </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element minOccurs="0" name="RestrictionStatus">
+                      <xsd:complexType>
+                        <xsd:attribute name="Status" type="xsd:string" use="required" />
+                      </xsd:complexType>
+                    </xsd:element>
+                  </xsd:sequence>
+                  <xsd:attribute name="BookingLimitMessageType" type="xsd:string" use="required" />
+                  <xsd:attribute name="BookingLimit" type="xsd:unsignedByte" use="required" />
+                </xsd:complexType>
+              </xsd:element>
+            </xsd:sequence>
+            <xsd:attribute name="HotelCode" type="xsd:string" use="required" />
+          </xsd:complexType>
+        </xsd:element>
+      </xsd:sequence>
+      <xsd:attribute name="EchoToken" type="xsd:string" use="required" />
+      <xsd:attribute name="Target" type="xsd:string" use="required" />
+      <xsd:attribute name="TimeStamp" type="xsd:dateTime" use="required" />
+      <xsd:attribute name="Version" type="xsd:decimal" use="required" />
+    </xsd:complexType>
+  </xsd:element>
+</xs:schema>
