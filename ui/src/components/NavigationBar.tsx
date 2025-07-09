@@ -43,26 +43,56 @@ const NavigationBar = () => {
   };
 
   return (
-    <AppBar position="fixed" color="default" elevation={1}>
+    <AppBar position="fixed" color="default" elevation={1} sx={{
+      background: 'linear-gradient(90deg, #a8c0ff 0%, #b8a9c9 100%)',
+      backdropFilter: 'blur(10px)',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+    }}>
       <Toolbar sx={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
         {/* Logo and App Name */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {/* Placeholder for logo */}
-          <Box sx={{ width: 36, height: 36, bgcolor: 'primary.main', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1 }}>
+          <Box sx={{ 
+            width: 40, 
+            height: 40, 
+            background: 'linear-gradient(45deg, #ff6b35, #f7931e)',
+            borderRadius: '50%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            mr: 1,
+            boxShadow: '0 4px 15px rgba(255, 107, 53, 0.3)'
+          }}>
             <Typography variant="h6" color="white" fontWeight={700} sx={{ fontSize: 20 }}>
               P
             </Typography>
           </Box>
-          <Typography variant="h6" color="primary" fontWeight={700} sx={{ letterSpacing: 1, mr: 2 }}>
+          <Typography variant="h6" color="white" fontWeight={700} sx={{ 
+            letterSpacing: 1, 
+            mr: 2,
+            textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+          }}>
             PMS Platform
           </Typography>
-          <FormControl size="small" sx={{ minWidth: 100, mr: 2 }}>
-            <InputLabel id="role-select-label">Role</InputLabel>
+          <FormControl size="small" sx={{ minWidth: 120, mr: 2 }}>
+            <InputLabel id="role-select-label" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>Role</InputLabel>
             <Select
               labelId="role-select-label"
               value={role}
               label="Role"
               onChange={e => setRole(e.target.value as 'dev' | 'qa')}
+              sx={{
+                color: 'white',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.3)'
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.5)'
+                },
+                '& .MuiSvgIcon-root': {
+                  color: 'white'
+                }
+              }}
             >
               <MenuItem value="dev">Developer</MenuItem>
               <MenuItem value="qa">QA</MenuItem>
