@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, Typography, List, ListItem, ListItemText, IconButton, TextField, Button, Alert, CircularProgress, Box, ListItemSecondaryAction, Stack, Checkbox } from '@mui/material';
+import { Card, CardContent, Typography, TextField, Button, Alert, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogActions, Grid, IconButton, Stack, Checkbox } from '@mui/material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
@@ -21,6 +22,9 @@ const PMSRegistration = () => {
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [search, setSearch] = useState('');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPms, setEditingPms] = useState<any>(null);
 
   const fetchPMSList = async () => {
     setLoading(true);
@@ -62,16 +66,18 @@ const PMSRegistration = () => {
   };
 
   const handleEdit = (pms: any) => {
-    setEditing(pms.code);
+    setEditingPms(pms);
     setEditName(pms.name || '');
     setEditDesc(pms.description || '');
     setEditCombinedAvailRate(!!pms.combined_avail_rate);
     setEditError(null);
     setEditSuccess(null);
+    setEditDialogOpen(true);
   };
 
   const handleCancelEdit = () => {
-    setEditing(null);
+    setEditDialogOpen(false);
+    setEditingPms(null);
     setEditName('');
     setEditDesc('');
     setEditCombinedAvailRate(false);
@@ -79,7 +85,8 @@ const PMSRegistration = () => {
     setEditSuccess(null);
   };
 
-  const handleSaveEdit = async (code: string) => {
+  const handleSaveEdit = async () => {
+    if (!editingPms) return;
     setSavingEdit(true);
     setEditError(null);
     setEditSuccess(null);
@@ -88,7 +95,7 @@ const PMSRegistration = () => {
       formData.append('name', editName);
       formData.append('description', editDesc);
       formData.append('combined_avail_rate', String(editCombinedAvailRate));
-      const res = await fetch(`${API_BASE}/pms/${code}`, {
+      const res = await fetch(`${API_BASE}/pms/${editingPms.code}`, {
         method: 'PUT',
         body: formData,
       });
@@ -103,6 +110,94 @@ const PMSRegistration = () => {
     }
   };
 
+  // Filtered results
+  const filteredPmsList = pmsList.filter((pms: any) => 
+    pms.name?.toLowerCase().includes(search.toLowerCase()) ||
+    pms.code?.toLowerCase().includes(search.toLowerCase()) ||
+    pms.description?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // DataGrid columns
+  const columns: GridColDef[] = [
+    { 
+      field: 'name', 
+      headerName: 'PMS Name', 
+      flex: 1, 
+      sortable: true, 
+      filterable: true,
+      renderCell: (params: any) => (
+        <Box>
+          <Typography variant="subtitle2" fontWeight={600}>
+            {params.row.name}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            ({params.row.code})
+          </Typography>
+        </Box>
+      )
+    },
+    { 
+      field: 'description', 
+      headerName: 'Description', 
+      flex: 2, 
+      sortable: true, 
+      filterable: true 
+    },
+    { 
+      field: 'combined_avail_rate', 
+      headerName: 'Combined Avail+Rate', 
+      width: 150, 
+      sortable: true, 
+      filterable: true,
+      renderCell: (params: any) => (
+        params.row.combined_avail_rate ? (
+          <Typography variant="caption" color="primary" sx={{ fontWeight: 600 }}>
+            ✓ Yes
+          </Typography>
+        ) : (
+          <Typography variant="caption" color="text.secondary">
+            No
+          </Typography>
+        )
+      )
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      sortable: false,
+      filterable: false,
+      renderCell: (params: any) => (
+        <>
+          <IconButton 
+            color="primary" 
+            onClick={() => handleEdit(params.row)} 
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            <EditIcon />
+          </IconButton>
+          <IconButton 
+            color="error" 
+            onClick={() => handleDelete(params.row.code)} 
+            disabled={deleting === params.row.code}
+            size="small"
+          >
+            <DeleteIcon />
+          </IconButton>
+        </>
+      ),
+      width: 120,
+      align: 'center',
+      headerAlign: 'center',
+    },
+  ];
+
+  // Prepare rows for DataGrid
+  const rows = filteredPmsList.map((pms: any) => ({
+    id: pms.code || pms.name,
+    ...pms
+  }));
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 400 }}>
       <Card elevation={3} sx={{ width: '100%', maxWidth: 600, mt: 2 }}>
@@ -110,6 +205,15 @@ const PMSRegistration = () => {
           <Typography variant="h5" color="primary" fontWeight={700} gutterBottom align="center">
             Registered PMSs
           </Typography>
+          <TextField
+            label="Search PMS"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            size="small"
+            fullWidth
+            sx={{ mb: 2 }}
+            placeholder="Search by name, code, or description..."
+          />
           {deleteError && <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert>}
           {deleteSuccess && <Alert severity="success" sx={{ mb: 2 }}>{deleteSuccess}</Alert>}
           {editError && <Alert severity="error" sx={{ mb: 2 }}>{editError}</Alert>}
@@ -121,78 +225,66 @@ const PMSRegistration = () => {
           ) : error ? (
             <Alert severity="error">{error}</Alert>
           ) : (
-            <List>
-              {Array.isArray(pmsList) && pmsList.length === 0 && (
-                <ListItem>
-                  <ListItemText primary="No PMSs registered." />
-                </ListItem>
-              )}
-              {Array.isArray(pmsList) && pmsList.map((pms: any) => (
-                <ListItem key={pms.code || pms.name} alignItems="flex-start" sx={{ py: 1 }}>
-                  {editing === pms.code ? (
-                    <Stack direction="column" spacing={1} sx={{ width: '100%' }}>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="center">
-                        <TextField
-                          label="Name"
-                          value={editName}
-                          onChange={e => setEditName(e.target.value)}
-                          size="small"
-                          required
-                          disabled={savingEdit}
-                          sx={{ flex: 1 }}
-                        />
-                        <TextField
-                          label="Description"
-                          value={editDesc}
-                          onChange={e => setEditDesc(e.target.value)}
-                          size="small"
-                          disabled={savingEdit}
-                          sx={{ flex: 2 }}
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
-                          <Checkbox
-                            checked={editCombinedAvailRate}
-                            onChange={e => setEditCombinedAvailRate(e.target.checked)}
-                            disabled={savingEdit}
-                            size="small"
-                          />
-                          <Typography variant="body2">Combined Avail+Rate</Typography>
-                        </Box>
-                        <IconButton color="primary" onClick={() => handleSaveEdit(pms.code)} disabled={savingEdit} sx={{ ml: 1 }}>
-                          <SaveIcon />
-                        </IconButton>
-                        <IconButton color="secondary" onClick={handleCancelEdit} disabled={savingEdit}>
-                          <CancelIcon />
-                        </IconButton>
-                      </Stack>
-                    </Stack>
-                  ) : (
-                    <>
-                      <ListItemText
-                        primary={<Typography variant="subtitle1" fontWeight={600}>{pms.name} <Typography component="span" variant="body2" color="text.secondary">({pms.code})</Typography></Typography>}
-                        secondary={
-                          <>
-                            <Typography variant="body2" color="text.secondary">{pms.description}</Typography>
-                            {pms.combined_avail_rate && (
-                              <Typography variant="caption" color="primary" sx={{ ml: 1 }}>[Combined Avail+Rate]</Typography>
-                            )}
-                          </>
-                        }
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton edge="end" color="primary" onClick={() => handleEdit(pms)} sx={{ mr: 1 }}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton edge="end" color="error" onClick={() => handleDelete(pms.code)} disabled={deleting === pms.code}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </>
-                  )}
-                </ListItem>
-              ))}
-            </List>
+            <DataGrid
+              autoHeight
+              rows={rows}
+              columns={columns}
+              initialState={{ pagination: { pageSize: 10 } }}
+              disableSelectionOnClick
+              sx={{ background: '#fafbfc', borderRadius: 2, mb: 2 }}
+            />
           )}
+
+          {/* Edit PMS Dialog */}
+          <Dialog open={editDialogOpen} onClose={handleCancelEdit} fullWidth maxWidth="sm">
+            <DialogTitle>Edit PMS: {editingPms?.name}</DialogTitle>
+            <DialogContent>
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Name"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    fullWidth
+                    required
+                    disabled={savingEdit}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Description"
+                    value={editDesc}
+                    onChange={e => setEditDesc(e.target.value)}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    disabled={savingEdit}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Checkbox
+                      checked={editCombinedAvailRate}
+                      onChange={e => setEditCombinedAvailRate(e.target.checked)}
+                      disabled={savingEdit}
+                    />
+                    <Typography variant="body2">Combined Availability + Rate Messages</Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+              {editError && <Alert severity="error" sx={{ mt: 2 }}>{editError}</Alert>}
+              {editSuccess && <Alert severity="success" sx={{ mt: 2 }}>{editSuccess}</Alert>}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCancelEdit} color="secondary" startIcon={<CancelIcon />} disabled={savingEdit}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit} color="primary" variant="contained" startIcon={<SaveIcon />} disabled={savingEdit}>
+                {savingEdit ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
+                Save
+              </Button>
+            </DialogActions>
+          </Dialog>
         </CardContent>
       </Card>
     </Box>
